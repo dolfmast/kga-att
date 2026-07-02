@@ -1,0 +1,3104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KGA 교육참석 관리 시스템</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#1E2761;--primary-light:#e8eaf6;--accent:#4355b9;
+  --green:#2e7d32;--green-bg:#e8f5e9;
+  --amber:#e65100;--amber-bg:#fff3e0;
+  --red:#c62828;--red-bg:#ffebee;
+  --blue:#1565c0;--blue-bg:#e3f2fd;
+  --gray-bg:#f5f5f5;--gray-border:#ddd;
+  --text:#1a1a1a;--text2:#555;--bg:#f8f9fb;--white:#fff;
+  --radius:10px;--radius-sm:6px;
+  --shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+body{font-family:'Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh}
+
+/* NAV */
+.nav{background:var(--primary);color:#fff;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 6px rgba(0,0,0,0.2)}
+.nav-logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700}
+.nav-logo .shield{width:30px;height:30px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.nav-tabs{display:flex;gap:4px}
+.nav-tab{padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;color:rgba(255,255,255,0.7);border:none;background:none;border-radius:var(--radius-sm);transition:all 0.15s}
+.nav-tab:hover{color:#fff;background:rgba(255,255,255,0.12)}
+.nav-tab.active{color:#fff;background:rgba(255,255,255,0.2)}
+.nav-clock{font-size:13px;color:rgba(255,255,255,0.8);font-variant-numeric:tabular-nums;min-width:80px;text-align:right}
+
+/* LAYOUT */
+.main{max-width:960px;margin:0 auto;padding:24px 16px}
+.panel{display:none}.panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 24px;margin-bottom:16px}
+.card-title{font-size:15px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:600px){.metrics{grid-template-columns:repeat(2,1fr)}}
+.metric{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;text-align:center}
+.metric .m-label{font-size:11px;color:var(--text2);margin-bottom:6px;letter-spacing:0.3px}
+.metric .m-value{font-size:28px;font-weight:700}
+.metric .m-value.green{color:var(--green)}
+.metric .m-value.amber{color:var(--amber)}
+.metric .m-value.red{color:var(--red)}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;color:var(--text2);font-weight:500;border-bottom:2px solid var(--gray-border);font-size:12px;white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid #f0f0f0;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#fafafa}
+
+/* BADGES */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-on{background:var(--green-bg);color:var(--green)}
+.badge-late{background:var(--amber-bg);color:var(--amber)}
+.badge-very{background:var(--red-bg);color:var(--red)}
+.dept-tag{background:var(--blue-bg);color:var(--blue);display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px}
+.pin-tag{background:#f3e5f5;color:#7b1fa2;display:inline-block;padding:2px 8px;border-radius:20px;font-size:12px;font-family:monospace;font-weight:700;letter-spacing:2px}
+
+/* AVATAR */
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-right:6px;vertical-align:middle;flex-shrink:0}
+
+/* FORM */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;color:var(--text2);margin-bottom:6px;font-weight:500}
+input[type=text],input[type=date],select,input[type=search],input[type=password]{width:100%;height:44px;padding:0 14px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:#fff;color:var(--text);transition:border 0.15s;outline:none}
+input[type=text]:focus,select:focus,input[type=search]:focus,input[type=date]:focus,input[type=password]:focus{border-color:var(--accent)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:0 18px;height:40px;font-size:13px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;transition:all 0.15s;font-family:inherit;white-space:nowrap}
+.btn-primary{background:var(--primary);color:#fff;border:none}
+.btn-primary:hover{background:var(--accent)}
+.btn-outline{background:#fff;color:var(--primary);border:1.5px solid var(--primary)}
+.btn-outline:hover{background:var(--primary-light)}
+.btn-green{background:var(--green);color:#fff;border:none}
+.btn-red{background:var(--red);color:#fff;border:none}
+.btn-lg{height:52px;font-size:16px;padding:0 24px;width:100%;justify-content:center;border-radius:var(--radius)}
+
+/* ===== PIN CHECKIN ===== */
+.checkin-outer{min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px}
+.checkin-box{background:var(--white);border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.12);padding:32px 28px;width:100%;max-width:360px;text-align:center}
+.checkin-logo{width:56px;height:56px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.checkin-logo svg{width:28px;height:28px}
+.checkin-title{font-size:20px;font-weight:700;color:var(--primary);margin-bottom:4px}
+.checkin-sub{font-size:13px;color:var(--text2);margin-bottom:28px}
+
+/* PIN DOTS */
+.pin-dots{display:flex;justify-content:center;gap:14px;margin-bottom:24px;height:20px;align-items:center}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--gray-border);background:transparent;transition:all 0.15s}
+.pin-dot.filled{background:var(--primary);border-color:var(--primary)}
+.pin-dot.error{background:var(--red);border-color:var(--red)}
+.pin-dot.shake{animation:shake 0.4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}60%{transform:translateX(6px)}}
+
+/* NUMPAD */
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.num-btn{height:64px;font-size:22px;font-weight:600;border:1.5px solid #e0e0e0;border-radius:12px;background:#fff;cursor:pointer;color:var(--text);transition:all 0.1s;display:flex;align-items:center;justify-content:center;user-select:none}
+.num-btn:hover{background:var(--primary-light);border-color:var(--primary)}
+.num-btn:active{transform:scale(0.94);background:var(--primary);color:#fff;border-color:var(--primary)}
+.num-btn.del{font-size:18px;color:var(--text2)}
+.num-btn.del:hover{background:#fce4ec;border-color:var(--red);color:var(--red)}
+.num-btn.zero{grid-column:2}
+
+.pin-error{font-size:13px;color:var(--red);min-height:20px;margin-bottom:8px}
+.pin-hint{font-size:12px;color:var(--text2);margin-top:8px}
+
+/* SUCCESS */
+.success-wrap{display:none;text-align:center;padding:8px 0}
+.success-icon{font-size:56px;margin-bottom:12px}
+.success-name{font-size:22px;font-weight:700;color:var(--green);margin-bottom:8px}
+.success-time{font-size:14px;color:var(--text2);margin-bottom:4px}
+.success-status{font-size:15px;margin-top:8px}
+.back-btn{margin-top:20px;padding:10px 28px;cursor:pointer;border-radius:var(--radius-sm);border:1.5px solid var(--gray-border);background:#fff;font-size:14px;font-family:inherit;color:var(--text);font-weight:500}
+.back-btn:hover{border-color:var(--primary);color:var(--primary)}
+.already-badge{background:var(--amber-bg);color:var(--amber);border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:12px;display:none}
+
+/* TOP BAR FILTER */
+.top-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.top-bar input,.top-bar select{width:auto;height:36px;font-size:13px}
+.top-bar input[type=search]{flex:1;min-width:120px}
+
+/* BAR CHART */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.bar-label{min-width:30px;font-size:12px;color:var(--text2)}
+.bar-track{flex:1;background:#eee;border-radius:4px;height:10px;overflow:hidden}
+.bar-fill{height:100%;background:var(--primary);border-radius:4px;transition:width 0.4s}
+.bar-count{min-width:28px;font-size:12px;color:var(--text2);text-align:right}
+
+/* PAGINATION */
+.pagination{display:flex;justify-content:flex-end;gap:4px;margin-top:12px;flex-wrap:wrap}
+.pg-btn{width:32px;height:32px;border-radius:var(--radius-sm);border:1.5px solid var(--gray-border);background:#fff;cursor:pointer;font-size:13px;font-weight:500;color:var(--text)}
+.pg-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.pg-btn:hover:not(.active){background:var(--gray-bg)}
+
+/* AGENT MANAGEMENT */
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px}
+.agent-card{background:var(--white);border:1.5px solid var(--gray-border);border-radius:var(--radius);padding:14px 16px;position:relative}
+.agent-card:hover{border-color:var(--accent)}
+.agent-card .ac-name{font-size:14px;font-weight:700;margin-bottom:4px}
+.agent-card .ac-dept{font-size:12px;color:var(--text2);margin-bottom:8px}
+.agent-card .ac-pin{font-size:18px;font-weight:700;font-family:monospace;letter-spacing:4px;color:var(--primary);margin-bottom:8px}
+.agent-card .ac-actions{display:flex;gap:6px}
+.agent-card .ac-btn{flex:1;height:30px;font-size:12px;font-weight:500;border-radius:6px;cursor:pointer;border:1.5px solid var(--gray-border);background:#fff;font-family:inherit}
+.agent-card .ac-btn:hover{border-color:var(--accent);color:var(--accent)}
+.agent-card .ac-del{border-color:#fcc;color:var(--red)}
+.agent-card .ac-del:hover{background:var(--red-bg);border-color:var(--red)}
+.agent-card .ac-expired{position:absolute;top:10px;right:10px;font-size:10px;background:var(--amber-bg);color:var(--amber);padding:2px 7px;border-radius:20px;font-weight:600}
+.agent-card .ac-active{position:absolute;top:10px;right:10px;font-size:10px;background:var(--green-bg);color:var(--green);padding:2px 7px;border-radius:20px;font-weight:600}
+
+/* ADD AGENT FORM */
+.add-form{background:var(--primary-light);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;display:none}
+.add-form.open{display:block}
+.add-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.add-row .field{flex:1;min-width:120px;margin-bottom:0}
+.add-row input,.add-row select{height:40px;font-size:13px}
+
+/* ADMIN LOGIN */
+.admin-gate{max-width:360px;margin:40px auto}
+
+/* MONTH BADGE */
+.month-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;background:#ede7f6;color:#6a1b9a;font-weight:600}
+
+/* EMPTY */
+.empty{text-align:center;padding:32px;color:var(--text2);font-size:14px}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:12px 24px;border-radius:24px;font-size:13px;display:none;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.2);white-space:nowrap}
+
+@media(max-width:520px){
+  .nav-tabs{display:none}
+  .nav{padding:0 14px}
+  .num-btn{height:56px;font-size:20px}
+  .checkin-box{padding:24px 18px}
+  .add-row{flex-direction:column}
+}
+.mobile-bottom-nav{display:none}
+@media(max-width:520px){
+  .mobile-bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--primary);z-index:90;padding:0}
+  .mobile-bottom-nav button{flex:1;padding:10px 4px;font-size:10px;font-weight:500;color:rgba(255,255,255,0.7);border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+  .mobile-bottom-nav button.active{color:#fff}
+  .mobile-bottom-nav button span.icon{font-size:18px}
+  .main{padding-bottom:80px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">
+    <div class="shield">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L4 6V12C4 16.4 7.4 20.5 12 22C16.6 20.5 20 16.4 20 12V6L12 2Z" fill="#1E2761"/>
+        <path d="M10 14.5L7.5 12L8.9 10.6L10 11.7L15.1 6.6L16.5 8L10 14.5Z" fill="white"/>
+      </svg>
+    </div>
+    KGA 교육참석 관리
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-panel="checkin">✅ 교육참석 체크인</button>
+    <button class="nav-tab" data-panel="dashboard">📊 대시보드</button>
+    <button class="nav-tab" data-panel="list">📋 교육참석 목록</button>
+    <button class="nav-tab" data-panel="agents">👥 설계사 관리</button>
+    <button class="nav-tab" data-panel="leaves">🏖 휴가 관리</button>
+    <button class="nav-tab" data-panel="settings">⚙️ 설정</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px"><div class="nav-clock" id="clock"></div><button onclick="doAdminLogout()" style="border:none;background:rgba(255,255,255,0.15);color:#fff;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit">로그아웃</button></div>
+</nav>
+
+<div class="mobile-bottom-nav">
+  <button class="active" data-panel="checkin"><span class="icon">✅</span>체크인</button>
+  <button data-panel="dashboard"><span class="icon">📊</span>대시보드</button>
+  <button data-panel="list"><span class="icon">📋</span>목록</button>
+  <button data-panel="agents"><span class="icon">👥</span>설계사</button>
+  <button data-panel="leaves"><span class="icon">🏖</span>휴가</button>
+  <button data-panel="settings"><span class="icon">⚙️</span>설정</button>
+</div>
+
+<div class="main">
+
+<!-- ===== 교육참석 체크인 (PIN) ===== -->
+<div id="checkin" class="panel active">
+  <div class="checkin-outer">
+    <div class="checkin-box">
+      <div class="checkin-logo">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L4 6V12C4 16.4 7.4 20.5 12 22C16.6 20.5 20 16.4 20 12V6L12 2Z" fill="white" opacity="0.9"/>
+          <path d="M10 14.5L7.5 12L8.9 10.6L10 11.7L15.1 6.6L16.5 8L10 14.5Z" fill="#1E2761"/>
+        </svg>
+      </div>
+      <div class="checkin-title">KGA 교육참석 체크인</div>
+      <div class="checkin-sub" id="ci-date-label"></div>
+
+      <!-- FORM -->
+      <div id="pin-form">
+        <!-- 보안 상태 표시줄 -->
+        <div id="security-bar" style="display:flex;gap:6px;justify-content:center;margin-bottom:14px;flex-wrap:wrap">
+          <span id="sec-loc" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 10px;border-radius:20px;background:#f5f5f5;color:#888">
+            📍 위치 확인 중...
+          </span>
+          <span id="sec-dev" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 10px;border-radius:20px;background:#f5f5f5;color:#888">
+            📱 기기 확인 중...
+          </span>
+        </div>
+        <div class="already-badge" id="already-msg"></div>
+        <div class="pin-dots" id="pin-dots">
+          <div class="pin-dot" id="d0"></div>
+          <div class="pin-dot" id="d1"></div>
+          <div class="pin-dot" id="d2"></div>
+          <div class="pin-dot" id="d3"></div>
+        </div>
+        <div class="pin-error" id="pin-error"></div>
+        <div class="numpad">
+          <button class="num-btn" onclick="numPress('1')">1</button>
+          <button class="num-btn" onclick="numPress('2')">2</button>
+          <button class="num-btn" onclick="numPress('3')">3</button>
+          <button class="num-btn" onclick="numPress('4')">4</button>
+          <button class="num-btn" onclick="numPress('5')">5</button>
+          <button class="num-btn" onclick="numPress('6')">6</button>
+          <button class="num-btn" onclick="numPress('7')">7</button>
+          <button class="num-btn" onclick="numPress('8')">8</button>
+          <button class="num-btn" onclick="numPress('9')">9</button>
+          <button class="num-btn zero" onclick="numPress('0')">0</button>
+          <button class="num-btn del" onclick="numDel()">⌫</button>
+        </div>
+        <div class="pin-hint">월별 부여된 4자리 번호를 입력하세요</div>
+      </div>
+
+      <!-- SUCCESS -->
+      <div class="success-wrap" id="success-wrap">
+        <div class="success-icon">✅</div>
+        <div class="success-name" id="suc-name"></div>
+        <div class="success-time" id="suc-time"></div>
+        <div class="success-status" id="suc-status"></div>
+        <button class="back-btn" onclick="resetPin()">← 돌아가기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 대시보드 ===== -->
+<div id="dashboard" class="panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+    <div>
+      <h1 style="font-size:18px">오늘의 교육참석 현황</h1>
+      <p style="font-size:13px;color:var(--text2);margin-top:2px" id="today-label"></p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-outline" onclick="exportExcel('today')">📥 오늘 엑셀</button>
+      <button class="btn btn-primary" onclick="exportExcel('all')">📥 전체 엑셀</button>
+    </div>
+  </div>
+  <div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(110px,1fr))">
+    <div class="metric"><div class="m-label">등록 설계사</div><div class="m-value" id="m-total">0</div></div>
+    <div class="metric"><div class="m-label">오늘 교육참석</div><div class="m-value green" id="m-today">0</div></div>
+    <div class="metric"><div class="m-label">정시 교육참석</div><div class="m-value green" id="m-ontime">0</div></div>
+    <div class="metric"><div class="m-label">지각</div><div class="m-value amber" id="m-late">0</div></div>
+    <div class="metric"><div class="m-label">오늘 휴가</div><div class="m-value" id="m-leave" style="color:#5e35b1">0</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">최근 교육참석 (오늘)</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>이름</th><th>소속팀</th><th>PIN</th><th>교육참석시간</th><th>상태</th></tr></thead>
+        <tbody id="recent-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">팀별 교육참석 현황</div>
+    <div id="dept-chart"></div>
+  </div>
+</div>
+
+<!-- ===== 교육참석 목록 ===== -->
+<div id="list" class="panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <h2>교육참석 기록 목록</h2>
+    <button class="btn btn-primary" onclick="exportExcel('filtered')">📥 현재 조건 엑셀</button>
+  </div>
+  <div class="top-bar">
+    <input type="date" id="filter-date" onchange="renderList()">
+    <input type="search" placeholder="이름 검색..." id="filter-name" oninput="renderList()">
+    <select id="filter-status" onchange="renderList()" style="min-width:100px">
+      <option value="">전체 상태</option>
+      <option value="정시">정시</option>
+      <option value="지각">지각</option>
+      <option value="심한지각">심한지각</option>
+    </select>
+    <select id="list-dept-filter" onchange="renderList()" style="min-width:90px">
+      <option value="">전체 팀</option>
+    </select>
+    <button class="btn btn-outline" style="height:36px;padding:0 12px;font-size:12px" onclick="clearFilter()">초기화</button>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>이름</th><th>소속팀</th><th>PIN</th><th>교육참석시간</th><th>상태</th><th>날짜</th><th></th></tr></thead>
+        <tbody id="list-tbody"></tbody>
+      </table>
+    </div>
+    <div id="list-empty" class="empty" style="display:none">해당 조건의 교육참석 기록이 없습니다.</div>
+  </div>
+  <div class="pagination" id="pagination"></div>
+  <p style="font-size:12px;color:var(--text2);margin-top:8px;text-align:right" id="list-count"></p>
+</div>
+
+<!-- ===== 설계사 관리 ===== -->
+<div id="agents" class="panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <div>
+      <h2>설계사 관리</h2>
+      <p style="font-size:13px;color:var(--text2);margin-top:2px">등록된 설계사에게 4자리 PIN이 자동 부여됩니다</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-outline" onclick="toggleAddForm('single')">+ 개별 추가</button>
+      <button class="btn btn-outline" onclick="toggleAddForm('bulk')" style="background:var(--primary-light);border-color:var(--accent);color:var(--accent)">📋 일괄 추가 (250명)</button>
+      <!-- PIN 방식 인라인 선택 -->
+      <div style="display:flex;align-items:center;gap:0;border:1.5px solid var(--primary);border-radius:var(--radius-sm);overflow:hidden;height:36px">
+        <button id="agents-pin-phone" onclick="setAgentsPinMode('phone')"
+          style="padding:0 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;height:100%;transition:all 0.15s">
+          📱 핸드폰 뒷자리
+        </button>
+        <button id="agents-pin-random" onclick="setAgentsPinMode('random')"
+          style="padding:0 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;height:100%;border-left:1.5px solid var(--primary);transition:all 0.15s">
+          🎲 임의번호
+        </button>
+      </div>
+      <button class="btn btn-outline" onclick="previewPinRenew()" style="height:36px;font-size:12px">👁 미리보기</button>
+      <button class="btn btn-primary" onclick="renewAllPins()" style="height:36px;font-size:12px">🔄 전체 PIN 갱신</button>
+      <button class="btn btn-primary" onclick="exportAgents()">📥 명단 엑셀</button>
+    </div>
+  </div>
+
+  <!-- 개별 추가 FORM -->
+  <div class="add-form" id="add-form-single">
+    <div style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--primary)">새 설계사 등록 (개별)</div>
+    <div class="add-row">
+      <div class="field"><label>이름</label><input type="text" id="ag-name" placeholder="홍길동" maxlength="10"></div>
+      <div class="field"><label>소속팀</label><select id="ag-dept"><option value="">팀 선택</option></select></div>
+      <div class="field"><label>연락처 (선택)</label><input type="text" id="ag-phone" placeholder="010-0000-0000" maxlength="13"></div>
+      <div class="field" style="align-self:flex-end">
+        <button class="btn btn-primary" onclick="addAgent()" style="height:40px">등록</button>
+        <button class="btn btn-outline" onclick="toggleAddForm(null)" style="height:40px;margin-left:6px">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 일괄 추가 FORM -->
+  <div class="add-form" id="add-form-bulk" style="padding:20px 24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--primary)">설계사 일괄 추가</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:3px">엑셀 업로드 또는 복사 붙여넣기로 한 번에 등록</div>
+      </div>
+      <button class="btn btn-outline" onclick="toggleAddForm(null)" style="height:34px;font-size:12px">✕ 닫기</button>
+    </div>
+
+    <!-- 방법 탭 -->
+    <div style="display:flex;gap:0;margin-bottom:16px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);overflow:hidden;width:fit-content">
+      <button id="bulk-tab-excel" onclick="switchBulkTab('excel')" style="padding:8px 18px;font-size:13px;font-weight:600;border:none;background:var(--primary);color:#fff;cursor:pointer">📂 엑셀 업로드</button>
+      <button id="bulk-tab-paste" onclick="switchBulkTab('paste')" style="padding:8px 18px;font-size:13px;font-weight:500;border:none;background:#fff;color:var(--text2);cursor:pointer;border-left:1.5px solid var(--gray-border)">📋 붙여넣기</button>
+    </div>
+
+    <!-- 엑셀 업로드 섹션 -->
+    <div id="bulk-excel-section">
+      <div style="background:#fff;border:2px dashed var(--gray-border);border-radius:var(--radius);padding:24px;text-align:center;margin-bottom:14px;cursor:pointer;transition:border-color 0.15s" id="drop-zone" onclick="document.getElementById('excel-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor='var(--gray-border)'" ondrop="handleFileDrop(event)">
+        <div style="font-size:32px;margin-bottom:8px">📊</div>
+        <div style="font-size:14px;font-weight:600;color:var(--primary);margin-bottom:4px">엑셀 파일을 끌어다 놓거나 클릭하세요</div>
+        <div style="font-size:12px;color:var(--text2)">.xlsx / .xls 파일 지원 · 최대 1000행</div>
+        <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none" onchange="handleExcelFile(this.files[0])">
+      </div>
+      <div style="background:var(--gray-bg);border-radius:var(--radius-sm);padding:12px 16px;font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:14px">
+        <strong style="color:var(--text);display:block;margin-bottom:4px">📌 엑셀 파일 형식</strong>
+        1행: 헤더 (자동 감지 — 없어도 됨)<br>
+        A열: 이름 &nbsp;|&nbsp; B열: 소속팀 &nbsp;|&nbsp; C열: 연락처 (선택)<br>
+        예) &nbsp;<code style="background:#e8e8e8;padding:1px 6px;border-radius:3px">홍길동 | 강남팀 | 010-1234-5678</code><br>
+        <a id="download-template" href="#" onclick="downloadTemplate();return false" style="color:var(--accent);font-weight:600;text-decoration:none">⬇ 양식 파일 다운로드</a>
+      </div>
+      <div id="excel-preview" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:600" id="excel-preview-title"></span>
+          <button onclick="clearExcelPreview()" style="font-size:12px;color:var(--text2);border:none;background:none;cursor:pointer">✕ 취소</button>
+        </div>
+        <div style="max-height:220px;overflow-y:auto;border:1px solid var(--gray-border);border-radius:var(--radius-sm);margin-bottom:12px">
+          <table style="width:100%;font-size:12px;border-collapse:collapse">
+            <thead><tr style="background:var(--gray-bg);position:sticky;top:0"><th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--gray-border)">이름</th><th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--gray-border)">소속팀</th><th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--gray-border)">연락처</th><th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--gray-border)">상태</th></tr></thead>
+            <tbody id="excel-preview-tbody"></tbody>
+          </table>
+        </div>
+        <button class="btn btn-green" onclick="importExcelData()" style="width:100%;justify-content:center;height:44px;font-size:15px" id="excel-import-btn"></button>
+      </div>
+    </div>
+
+    <!-- 붙여넣기 섹션 -->
+    <div id="bulk-paste-section" style="display:none">
+      <div style="background:#fff;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);padding:12px 16px;font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:10px">
+        <strong style="color:var(--text);display:block;margin-bottom:4px">📌 붙여넣기 방법</strong>
+        엑셀에서 이름·팀·연락처 열을 선택 → Ctrl+C → 아래 칸에 Ctrl+V<br>
+        탭(Tab)으로 구분된 형식이면 자동 인식됩니다.<br>
+        이름만 있어도 됩니다. 팀 없으면 기본팀 적용.
+      </div>
+      <textarea id="paste-area" placeholder="여기에 붙여넣기 하세요 (Ctrl+V)&#10;&#10;예시:&#10;홍길동	강남팀	010-1111-2222&#10;김철수	강북팀	010-3333-4444&#10;이영희	강남팀" style="width:100%;height:180px;padding:12px 14px;font-size:13px;font-family:inherit;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);resize:vertical;outline:none;line-height:1.6" oninput="parsePastePreview()"></textarea>
+      <div id="paste-preview" style="display:none;margin-top:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:600" id="paste-preview-title"></span>
+        </div>
+        <div style="max-height:200px;overflow-y:auto;border:1px solid var(--gray-border);border-radius:var(--radius-sm);margin-bottom:12px">
+          <table style="width:100%;font-size:12px;border-collapse:collapse">
+            <thead><tr style="background:var(--gray-bg);position:sticky;top:0"><th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--gray-border)">이름</th><th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--gray-border)">소속팀</th><th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--gray-border)">연락처</th></tr></thead>
+            <tbody id="paste-preview-tbody"></tbody>
+          </table>
+        </div>
+        <button class="btn btn-green" onclick="importPasteData()" style="width:100%;justify-content:center;height:44px;font-size:15px" id="paste-import-btn"></button>
+      </div>
+    </div>
+
+    <!-- 결과 -->
+    <div id="bulk-result" style="display:none;margin-top:14px;padding:14px 16px;border-radius:var(--radius-sm);font-size:13px;line-height:1.7"></div>
+  </div>
+
+  <!-- SEARCH -->
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+    <input type="search" id="agent-search" placeholder="이름 검색..." oninput="renderAgents()" style="flex:1;height:38px;min-width:120px">
+    <select id="agent-dept-filter" onchange="renderAgents()" style="height:38px;min-width:100px"></select>
+  </div>
+
+  <div id="agent-grid" class="agent-grid"></div>
+  <div id="agent-empty" class="empty" style="display:none">등록된 설계사가 없습니다. 상단의 설계사 추가를 눌러 등록하세요.</div>
+  <p style="font-size:12px;color:var(--text2);margin-top:8px" id="agent-count"></p>
+</div>
+
+<!-- ===== 휴가 관리 ===== -->
+<div id="leaves" class="panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <div>
+      <h2>휴가 관리</h2>
+      <p style="font-size:13px;color:var(--text2);margin-top:2px">휴가계 제출 시 해당 기간은 자동으로 교육참석 인정 처리됩니다</p>
+    </div>
+    <button class="btn btn-primary" onclick="exportLeaves()">📥 휴가 목록 엑셀</button>
+  </div>
+
+  <!-- 휴가 등록 카드 -->
+  <div class="card">
+    <div class="card-title">+ 휴가계 등록</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div style="flex:1;min-width:140px">
+          <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">설계사 *</label>
+          <input type="search" id="leave-agent-search" placeholder="🔍 이름으로 검색..." oninput="filterLeaveAgents()" style="width:100%;height:34px;padding:0 10px;font-size:13px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);font-family:inherit;outline:none;margin-bottom:6px">
+          <select id="leave-agent" style="width:100%;height:40px;padding:0 10px;font-size:13px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);font-family:inherit;outline:none">
+            <option value="">설계사 선택</option>
+          </select>
+        </div>
+        <div style="min-width:130px">
+          <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">휴가 종류 *</label>
+          <select id="leave-type" style="width:100%;height:40px;padding:0 10px;font-size:13px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);font-family:inherit;outline:none">
+            <option value="경조사">🌹 경조사</option>
+            <option value="교육출장">📚 교육출장</option>
+            <option value="병가">🤒 병가</option>
+          </select>
+        </div>
+
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div style="min-width:140px">
+          <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">시작일 *</label>
+          <input type="date" id="leave-start" style="width:100%;height:40px;padding:0 10px;font-size:13px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);font-family:inherit;outline:none">
+        </div>
+        <div style="min-width:140px">
+          <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">종료일 *</label>
+          <input type="date" id="leave-end" style="width:100%;height:40px;padding:0 10px;font-size:13px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);font-family:inherit;outline:none">
+        </div>
+        <div style="flex:1;min-width:160px">
+          <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">사유 (선택)</label>
+          <input type="text" id="leave-reason" maxlength="50" placeholder="예: 가족 결혼식, 본인 결혼 등" style="width:100%;height:40px;padding:0 10px;font-size:13px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);font-family:inherit;outline:none">
+        </div>
+        <button class="btn btn-primary" style="height:40px" id="leave-submit-btn" onclick="addLeave()">휴가 등록</button>
+      </div>
+      <div id="leave-edit-notice" style="display:none;background:#fff3e0;border:1px solid #ffb74d;border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:#e65100">
+        ✏️ <b id="leave-edit-name"></b> 님의 휴가를 수정하는 중입니다. 내용을 고친 뒤 <b>수정 완료</b>를 누르세요.
+        <button onclick="cancelEditLeave()" style="border:none;background:none;color:#e65100;text-decoration:underline;cursor:pointer;font-size:12px;font-family:inherit;margin-left:6px">취소</button>
+      </div>
+      <p style="font-size:11px;color:var(--text2)">💡 등록 시 시작일~종료일의 모든 평일이 자동으로 교육참석 인정 처리됩니다. (주말 제외 옵션은 등록 후 확인 가능)</p>
+    </div>
+  </div>
+
+  <!-- 통계 -->
+  <div class="metrics" style="margin-top:14px">
+    <div class="metric"><div class="m-label">전체 휴가</div><div class="m-value" id="lv-total">0</div></div>
+    <div class="metric"><div class="m-label">진행 중</div><div class="m-value green" id="lv-active">0</div></div>
+    <div class="metric"><div class="m-label">이번 달</div><div class="m-value" id="lv-month">0</div></div>
+    <div class="metric"><div class="m-label">자동 인정 일수</div><div class="m-value amber" id="lv-days">0</div></div>
+  </div>
+
+  <!-- 휴가 목록 -->
+  <div class="card" style="margin-top:14px">
+    <div class="card-title">휴가 등록 내역</div>
+    <div class="top-bar">
+      <input type="search" id="leave-search" placeholder="이름 검색..." oninput="renderLeaves()" style="flex:1;min-width:120px;height:36px;font-size:13px">
+      <select id="leave-filter-type" onchange="renderLeaves()" style="min-width:100px;height:36px;font-size:13px">
+        <option value="">전체 종류</option>
+        <option>경조사</option>
+        <option>교육출장</option>
+        <option>병가</option>
+      </select>
+      <select id="leave-filter-status" onchange="renderLeaves()" style="min-width:100px;height:36px;font-size:13px">
+        <option value="">전체 상태</option>
+        <option value="active">진행 중</option>
+        <option value="upcoming">예정</option>
+        <option value="past">완료</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>설계사</th><th>지점</th><th>종류</th><th>기간</th><th>일수</th><th>사유</th><th>상태</th><th></th></tr></thead>
+        <tbody id="leave-tbody"></tbody>
+      </table>
+    </div>
+    <div id="leave-empty" class="empty" style="display:none">등록된 휴가 내역이 없습니다.</div>
+  </div>
+</div>
+
+<!-- ===== 설정 ===== -->
+<div id="settings" class="panel">
+  <h2 style="margin-bottom:16px">시스템 설정</h2>
+
+  <div class="card">
+    <div class="card-title">팀(부서) 관리</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <input type="text" id="dept-input" placeholder="팀 이름 입력 (예: 강남팀)" style="flex:1;height:40px;min-width:120px">
+      <button class="btn btn-primary" style="height:40px" onclick="addDept()">+ 추가</button>
+      <button class="btn btn-outline" style="height:40px;font-size:12px;border-color:var(--accent);color:var(--accent)" onclick="resetDeptsToDefault()">↺ 5개 지점으로 초기화</button>
+    </div>
+    <div id="dept-list" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    <p style="font-size:11px;color:var(--text2);margin-top:10px">현재 저장된 팀 목록이 잘못되어 있으면 "5개 지점으로 초기화" 버튼을 누르세요.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔒 대리 출석 방지 설정</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+        <input type="checkbox" id="cfg-gps" onchange="saveSecCfg()" style="width:18px;height:18px;cursor:pointer">
+        <span>📍 <strong>위치 인증</strong> — 소속 지점 반경 내에서만 체크인 허용</span>
+      </label>
+      <div id="gps-sub" style="display:none;margin-left:28px;padding:12px 16px;background:var(--gray-bg);border-radius:var(--radius-sm)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+          <span style="font-size:13px;color:var(--text2)">허용 반경</span>
+          <select id="cfg-radius" onchange="saveSecCfg()" style="height:34px;width:90px;font-size:13px">
+            <option value="50">50m</option>
+            <option value="100" selected>100m</option>
+            <option value="200">200m</option>
+            <option value="500">500m</option>
+          </select>
+          <span style="font-size:12px;color:var(--text2)">각 지점 반경 동일 적용</span>
+        </div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--primary)">지점별 위치 등록</div>
+        <div id="branch-loc-list" style="display:flex;flex-direction:column;gap:8px"></div>
+        <button class="btn btn-outline" style="height:34px;font-size:12px;margin-top:10px;width:100%;justify-content:center" onclick="addBranch()">+ 지점 추가</button>
+      </div>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+        <input type="checkbox" id="cfg-dev" onchange="saveSecCfg()" style="width:18px;height:18px;cursor:pointer">
+        <span>📱 <strong>기기 지문 잠금</strong> — 첫 체크인 시 기기를 등록, 다른 폰으로 차단</span>
+      </label>
+    </div>
+    <div style="font-size:12px;color:var(--text2);background:#fff8e1;padding:10px 14px;border-radius:var(--radius-sm);line-height:1.7;margin-bottom:14px">
+      ⚠ 두 옵션 모두 활성화 시 <strong>등록된 기기 + 소속 지점 위치</strong> 두 조건을 동시에 만족해야 체크인됩니다.<br>
+      설계사의 소속팀이 어느 지점인지는 팀→지점 매핑으로 자동 판단합니다.
+    </div>
+
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">팀 → 지점 매핑</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:8px">각 팀이 어느 지점 소속인지 지정합니다. (위치 인증에 사용)</div>
+    <div id="team-branch-map" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
+
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;margin-top:8px">설계사별 기기 초기화</div>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <input type="search" id="dev-reset-search" placeholder="이름 검색..." oninput="renderDeviceResetList()" style="flex:1;height:36px;font-size:13px">
+    </div>
+    <div id="device-reset-list" style="max-height:180px;overflow-y:auto;border:1px solid var(--gray-border);border-radius:var(--radius-sm)"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🕘 교육참석 기준 시간</div>
+    <!-- 전역 기본값 -->
+    <div style="background:var(--primary-light);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:10px">전체 기본값 (지점별 미설정 시 적용)</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div>
+          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">정시 기준</label>
+          <select id="cfg-hour" style="width:76px;height:36px;font-size:13px">
+            <option value="7">07시</option><option value="8">08시</option><option value="9" selected>09시</option><option value="10">10시</option><option value="11">11시</option><option value="12">12시</option>
+          </select>
+          <select id="cfg-min" style="width:76px;height:36px;font-size:13px;margin-left:4px">
+            <option value="0" selected>00분</option><option value="30">30분</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">심한지각 기준</label>
+          <select id="cfg-late" style="width:100px;height:36px;font-size:13px">
+            <option value="30" selected>+30분</option><option value="60">+60분</option><option value="120">+120분</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" style="height:36px;align-self:flex-end;font-size:12px" onclick="saveCfg()">기본값 저장</button>
+      </div>
+      <p style="font-size:11px;color:var(--text2);margin-top:8px" id="cfg-result"></p>
+    </div>
+    <!-- 지점별 개별 설정 -->
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">지점별 개별 시간 설정</div>
+    <div id="branch-time-list" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔢 PIN 방식 및 갱신</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">현재 월: <strong id="current-month"></strong> &nbsp;|&nbsp; 마지막 갱신: <strong id="last-renew"></strong></p>
+
+    <!-- PIN 방식 선택 -->
+    <div style="background:var(--primary-light);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:12px">PIN 부여 방식 선택</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+          <input type="radio" name="pin-mode" value="phone" id="pin-mode-phone" style="margin-top:3px;width:16px;height:16px;cursor:pointer" onchange="onPinModeChange()">
+          <div>
+            <div style="font-size:13px;font-weight:600">📱 핸드폰 뒷 4자리</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">설계사가 본인 번호 뒷자리를 그대로 사용 — 잊어버릴 염려 없음<br>연락처 미등록 설계사는 임의 번호 자동 적용</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+          <input type="radio" name="pin-mode" value="random" id="pin-mode-random" style="margin-top:3px;width:16px;height:16px;cursor:pointer" onchange="onPinModeChange()">
+          <div>
+            <div style="font-size:13px;font-weight:600">🎲 임의 4자리 번호</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">매월 무작위 번호 부여 — 보안성 높음, 번호 공지 필요</div>
+          </div>
+        </label>
+      </div>
+      <div id="pin-phone-warn" style="display:none;margin-top:10px;padding:8px 12px;background:#fff8e1;border-radius:6px;font-size:12px;color:#e65100;line-height:1.6">
+        ⚠ 핸드폰 뒷 4자리 방식은 번호가 알려질 경우 대리 출석이 가능합니다.<br>
+        <strong>기기 지문 잠금과 함께 사용</strong>하시면 보안을 유지할 수 있습니다.
+      </div>
+    </div>
+
+    <!-- 미리보기 + 갱신 버튼 -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="btn btn-outline" onclick="previewPinRenew()" style="height:38px;font-size:13px">👁 갱신 미리보기</button>
+      <button class="btn btn-primary" onclick="renewAllPins()" style="height:38px;font-size:13px">🔄 전체 PIN 갱신 실행</button>
+    </div>
+
+    <!-- 미리보기 테이블 -->
+    <div id="pin-preview-wrap" style="display:none;max-height:240px;overflow-y:auto;border:1px solid var(--gray-border);border-radius:var(--radius-sm)">
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <thead>
+          <tr style="background:var(--gray-bg);position:sticky;top:0">
+            <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--gray-border)">이름</th>
+            <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--gray-border)">지점</th>
+            <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--gray-border)">현재 PIN</th>
+            <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--gray-border)">갱신 후 PIN</th>
+            <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--gray-border)">비고</th>
+          </tr>
+        </thead>
+        <tbody id="pin-preview-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔑 관리자 계정 설정</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+        <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">아이디</label><input type="text" id="new-admin-id" style="height:38px;width:130px;padding:0 10px;font-size:13px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);font-family:inherit;outline:none" placeholder="아이디"></div>
+        <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">새 비밀번호</label><input type="password" id="new-admin-pw" style="height:38px;width:130px;padding:0 10px;font-size:13px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);font-family:inherit;outline:none" placeholder="새 비밀번호"></div>
+        <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">확인</label><input type="password" id="new-admin-pw2" style="height:38px;width:130px;padding:0 10px;font-size:13px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);font-family:inherit;outline:none" placeholder="비밀번호 확인"></div>
+        <button class="btn btn-primary" style="height:38px;font-size:12px" onclick="saveAdminAccount()">저장</button>
+      </div>
+      <p style="font-size:11px;color:var(--text2)">초기 아이디/비밀번호: <strong>admin / kga1234</strong> — 반드시 변경하세요</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">샘플 데이터</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:12px">데모용 설계사 20명과 오늘의 교육참석 기록을 자동 생성합니다</p>
+    <button class="btn btn-outline" onclick="genSample()">📊 샘플 데이터 생성</button>
+  </div>
+
+  <div class="card" style="border:1.5px solid #fcc">
+    <div class="card-title" style="color:var(--red)">⚠️ 데이터 초기화</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">교육참석 기록 또는 설계사 전체 데이터를 삭제합니다. 되돌릴 수 없습니다.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-outline" style="border-color:var(--amber);color:var(--amber)" onclick="clearAttendance()">교육참석기록만 삭제</button>
+      <button class="btn btn-outline" style="border-color:#e53935;color:#e53935" onclick="clearAgents()">설계사 일괄 삭제</button>
+      <button class="btn btn-red" onclick="clearAll()">전체 초기화</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── 설계사 편집 모달 ── -->
+<div id="agent-edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:var(--radius);box-shadow:0 8px 32px rgba(0,0,0,0.2);padding:24px 28px;width:100%;max-width:420px;margin:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <h3 style="font-size:16px;color:var(--primary)">설계사 정보 수정</h3>
+      <button onclick="closeEditModal()" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text2)">×</button>
+    </div>
+    <input type="hidden" id="edit-agent-id">
+    <div class="field" style="margin-bottom:12px">
+      <label style="font-size:13px;color:var(--text2);display:block;margin-bottom:5px">이름</label>
+      <input type="text" id="edit-agent-name" maxlength="10" style="width:100%;height:42px;padding:0 12px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;outline:none">
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label style="font-size:13px;color:var(--text2);display:block;margin-bottom:5px">소속 지점</label>
+      <select id="edit-agent-dept" style="width:100%;height:42px;padding:0 12px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;outline:none"></select>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label style="font-size:13px;color:var(--text2);display:block;margin-bottom:5px">연락처</label>
+      <input type="text" id="edit-agent-phone" maxlength="13" placeholder="010-0000-0000" style="width:100%;height:42px;padding:0 12px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;outline:none">
+    </div>
+    <div class="field" style="margin-bottom:18px">
+      <label style="font-size:13px;color:var(--text2);display:block;margin-bottom:5px">PIN 번호</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="text" id="edit-agent-pin" maxlength="4" placeholder="4자리" style="width:100px;height:42px;padding:0 12px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);font-size:18px;font-family:monospace;letter-spacing:4px;outline:none">
+        <button onclick="regenPin()" style="height:42px;padding:0 14px;font-size:12px;font-weight:600;border:1.5px solid var(--accent);background:#fff;color:var(--accent);border-radius:var(--radius-sm);cursor:pointer">🔄 새 PIN 발급</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="saveAgentEdit()" class="btn btn-primary" style="flex:1;height:44px;font-size:14px;justify-content:center">저장</button>
+      <button onclick="closeEditModal()" class="btn btn-outline" style="height:44px;font-size:14px">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 관리자 로그인 오버레이 ── -->
+<div id="admin-overlay" style="display:flex;position:fixed;inset:0;background:rgba(15,20,50,0.97);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,0.3);padding:36px 32px;width:100%;max-width:360px;text-align:center;margin:16px">
+    <div style="width:60px;height:60px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+      <svg viewBox="0 0 24 24" fill="none" width="32" height="32">
+        <path d="M12 2L4 6V12C4 16.4 7.4 20.5 12 22C16.6 20.5 20 16.4 20 12V6L12 2Z" fill="white" opacity="0.9"/>
+        <path d="M10 14.5L7.5 12L8.9 10.6L10 11.7L15.1 6.6L16.5 8L10 14.5Z" fill="#1E2761"/>
+      </svg>
+    </div>
+    <div style="font-size:20px;font-weight:700;color:var(--primary);margin-bottom:4px">KGA 교육참석 관리</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:24px">내근사원 전용 시스템</div>
+    <div style="text-align:left;margin-bottom:10px">
+      <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:5px">사번 또는 아이디</label>
+      <input type="text" id="admin-id" placeholder="아이디 입력" autocomplete="username"
+        style="width:100%;height:44px;padding:0 14px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;outline:none"
+        onkeydown="if(event.key==='Enter') document.getElementById('admin-pw').focus()">
+    </div>
+    <div style="text-align:left;margin-bottom:6px">
+      <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:5px">비밀번호</label>
+      <input type="password" id="admin-pw" placeholder="비밀번호 입력" autocomplete="current-password"
+        style="width:100%;height:44px;padding:0 14px;border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;outline:none"
+        onkeydown="if(event.key==='Enter') doAdminLogin()">
+    </div>
+    <div style="font-size:11px;color:var(--red);min-height:18px;margin-bottom:14px;text-align:left" id="admin-err"></div>
+    <button onclick="doAdminLogin()" class="btn btn-primary" style="width:100%;height:46px;font-size:15px;justify-content:center;border-radius:var(--radius-sm)">로그인</button>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #eee">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">설계사 교육참석 체크인은 별도 QR로 접속하세요</div>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:#bbb">초기 비밀번호: <strong style="color:#aaa">kga1234</strong> (설정에서 변경)</div>
+  </div>
+</div>
+</div><!-- /main -->
+<div id="toast"></div>
+
+<script>
+// ============================================================
+//  STORAGE KEYS
+// ============================================================
+// ============================================================
+//  구글 시트 백엔드 동기화
+// ============================================================
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyxD97zJo9FBr02dFpYAm_NOWd2z6eq6fstn_6H7--qREY3Qk0Kod8HL6c24LEUedj7/exec';
+const LOCAL_ADMIN = false; // 배포용 — 체크인 활성화
+const SYNC_INTERVAL = 30000; // 30초마다 동기화
+let _syncing = false;
+let _pushing = false; // push 중에는 sync 차단
+let _lastSync = 0;
+
+/* fetch with timeout + retry */
+async function fetchWithRetry(url, options, maxRetries){
+  maxRetries = maxRetries || 2;
+  for(let i = 0; i < maxRetries; i++){
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(()=>controller.abort(), 10000); // 10초 타임아웃
+      const res = await fetch(url, Object.assign({}, options || {}, {signal: controller.signal}));
+      clearTimeout(timeoutId);
+      return res;
+    } catch(e){
+      console.warn(`fetch retry ${i+1}/${maxRetries}`, e.message);
+      if(i === maxRetries - 1) throw e;
+      await new Promise(r => setTimeout(r, 500)); // 0.5초만 대기
+    }
+  }
+}
+
+/* 시트에서 전체 데이터 가져와서 로컬스토리지에 저장 */
+async function syncFromSheet(){
+  if(_syncing || _pushing) return; // 푸시 중이면 동기화 스킵 (덮어쓰기 방지)
+  _syncing = true;
+  try {
+    showSyncStatus('☁️ 동기화 중...');
+    const res = await fetchWithRetry(SHEET_URL + '?action=getAll&t=' + Date.now());
+    const json = await res.json();
+    if(!json.ok) throw new Error(json.error || 'sync failed');
+
+    // 시트 데이터를 로컬에 덮어쓰기 (pin/phone은 문자열로 정규화)
+    const agents  = (json.data.agents  || []).map(a => ({
+      ...a,
+      id: String(a.id),
+      pin: String(a.pin || '').padStart(4,'0'),
+      phone: String(a.phone || ''),
+    }));
+    const records = (json.data.records || []).map(r => ({
+      ...r,
+      id: String(r.id),
+      agentId: String(r.agentId),
+      pin: r.pin ? String(r.pin).padStart(4,'0') : '',
+    }));
+    const leaves  = (json.data.leaves  || []).map(l => {
+      let dates = l.dates;
+      if(typeof dates === 'string'){
+        const s = dates.trim();
+        if(s.startsWith('[')){ try { dates = JSON.parse(s); } catch(e){ dates = []; } }
+        else if(s){ dates = s.split(',').map(x=>x.trim()).filter(Boolean); }
+        else { dates = []; }
+      }
+      if(!Array.isArray(dates)) dates = [];
+      // 예전에 등록되어 dates가 유실된 휴가는 시작일~종료일 평일로 재계산
+      if(!dates.length && l.start && l.end) dates = dateRangeWeekdays(l.start, l.end);
+      return { ...l, id: String(l.id), agentId: String(l.agentId), dates };
+    });
+
+    localStorage.setItem('kga_agents_v2', JSON.stringify(agents));
+    localStorage.setItem('kga_att_v2',    JSON.stringify(records));
+    localStorage.setItem('kga_leaves_v1', JSON.stringify(leaves));
+
+    // 동기화 후 화면 갱신 (체크인 화면이 열려있으면)
+    if(typeof renderDashboard === 'function' && document.getElementById('dashboard')?.classList.contains('active')) {
+      renderDashboard();
+    }
+
+    // 설정 데이터(지점/팀매핑/보안/시간)도 함께 받아오기
+    await pullSettingsFromSheet();
+
+    _lastSync = Date.now();
+    showSyncStatus('✅ 동기화 완료', 2000);
+    return true;
+  } catch(e){
+    console.error('sync error', e);
+    showSyncStatus('⚠️ 시트 연결 실패 (오프라인 모드)', 3000);
+    return false;
+  } finally {
+    _syncing = false;
+  }
+}
+
+/* 시트에 출석 1건 추가 (체크인 시 호출) */
+async function pushRecordToSheet(record){
+  try {
+    const params = new URLSearchParams();
+    params.append('action', 'addRecord');
+    params.append('data', JSON.stringify(record));
+    const res = await fetch(SHEET_URL, { method:'POST', body: params });
+    const json = await res.json();
+    return json.ok;
+  } catch(e){
+    console.error('push record error', e);
+    return false;
+  }
+}
+
+/* 시트에 설계사 전체 명단 저장 (등록/수정/삭제 후 호출) */
+async function pushAgentsToSheet(){
+  _pushing = true;
+  try {
+    const agents = JSON.parse(localStorage.getItem('kga_agents_v2') || '[]');
+    const params = new URLSearchParams();
+    params.append('action', 'saveAgents');
+    params.append('data', JSON.stringify(agents));
+    const res = await fetch(SHEET_URL, { method:'POST', body: params });
+    const json = await res.json();
+    return json.ok;
+  } catch(e){
+    console.error('push agents error', e);
+    return false;
+  } finally {
+    _pushing = false;
+  }
+}
+
+/* ── 설정 데이터(지점/팀매핑/보안/시간) 시트에 푸시 ── */
+async function pushSettingsToSheet(partial){
+  _pushing = true;
+  try {
+    // partial = {branches?, teamMap?, secCfg?, branchCfg?, baseCfg?, pinMode?, depts?}
+    const data = partial || {
+      branches:  JSON.parse(localStorage.getItem('kga_branches_v1') || '[]'),
+      teamMap:   JSON.parse(localStorage.getItem('kga_tmap_v1')     || '{}'),
+      secCfg:    JSON.parse(localStorage.getItem('kga_sec_v1')      || 'null'),
+      branchCfg: JSON.parse(localStorage.getItem('kga_branch_cfg_v1') || '{}'),
+      baseCfg:   JSON.parse(localStorage.getItem('kga_cfg_v2')      || 'null'),
+      pinMode:   JSON.parse(localStorage.getItem('kga_pin_mode_v1') || '"random"'),
+      depts:     JSON.parse(localStorage.getItem('kga_depts_v1')    || '[]'),
+    };
+    const body = 'action=saveSettings&data=' + encodeURIComponent(JSON.stringify(data));
+    const res = await fetch(SHEET_URL, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: body });
+    const json = await res.json();
+    return json.ok;
+  } catch(e){
+    console.error('push settings error', e);
+    return false;
+  } finally {
+    _pushing = false;
+  }
+}
+
+/* ── 시트에서 설정 데이터 가져와서 로컬에 저장 ── */
+async function pullSettingsFromSheet(){
+  try {
+    const res = await fetch(SHEET_URL + '?action=getSettings&t=' + Date.now());
+    const json = await res.json();
+    if(!json.ok) return false;
+    const d = json.data;
+    if(d.branches  && d.branches.length)  localStorage.setItem('kga_branches_v1', JSON.stringify(d.branches));
+    if(d.teamMap)   localStorage.setItem('kga_tmap_v1',       JSON.stringify(d.teamMap));
+    if(d.secCfg)    localStorage.setItem('kga_sec_v1',        JSON.stringify(d.secCfg));
+    if(d.branchCfg) localStorage.setItem('kga_branch_cfg_v1', JSON.stringify(d.branchCfg));
+    if(d.baseCfg)   localStorage.setItem('kga_cfg_v2',        JSON.stringify(d.baseCfg));
+    if(d.pinMode)   localStorage.setItem('kga_pin_mode_v1',   JSON.stringify(d.pinMode));
+    if(d.depts && d.depts.length) localStorage.setItem('kga_depts_v1', JSON.stringify(d.depts));
+    return true;
+  } catch(e){
+    console.error('pull settings error', e);
+    return false;
+  }
+}
+
+/* 시트에 휴가 전체 저장 */
+async function pushLeavesToSheet(){
+  _pushing = true;
+  try {
+    const leaves = JSON.parse(localStorage.getItem('kga_leaves_v1') || '[]');
+    const params = new URLSearchParams();
+    params.append('action', 'saveLeaves');
+    params.append('data', JSON.stringify(leaves));
+    const res = await fetch(SHEET_URL, { method:'POST', body: params });
+    const json = await res.json();
+    return json.ok;
+  } catch(e){
+    console.error('push leaves error', e);
+    return false;
+  } finally {
+    _pushing = false;
+  }
+}
+
+/* 시트에 출석 기록 전체 덮어쓰기 (일괄삭제 등에서 호출) */
+async function pushRecordsToSheet(){
+  _pushing = true;
+  try {
+    const records = JSON.parse(localStorage.getItem('kga_att_v2') || '[]');
+    const params = new URLSearchParams();
+    params.append('action', 'saveRecords');
+    params.append('data', JSON.stringify(records));
+    const res = await fetch(SHEET_URL, { method:'POST', body: params });
+    const json = await res.json();
+    return json.ok;
+  } catch(e){
+    console.error('push records error', e);
+    return false;
+  } finally {
+    _pushing = false;
+  }
+}
+
+/* 동기화 상태 표시 (우측 상단 작은 토스트) */
+function showSyncStatus(msg, autoHide){
+  let el = document.getElementById('sync-status');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'sync-status';
+    el.style.cssText = 'position:fixed;top:70px;right:16px;background:rgba(30,39,97,0.9);color:#fff;padding:6px 12px;border-radius:6px;font-size:11px;z-index:8000;box-shadow:0 2px 8px rgba(0,0,0,0.2);transition:opacity 0.3s;font-family:inherit';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  el.style.display = 'block';
+  if(autoHide){
+    clearTimeout(el._t);
+    el._t = setTimeout(()=>{ el.style.opacity = '0'; setTimeout(()=>{el.style.display='none';}, 300); }, autoHide);
+  }
+}
+
+/* 주기적 동기화 (관리자 모드에서만) */
+function startAutoSync(){
+  // 즉시 1회
+  syncFromSheet();
+  // 30초마다 자동 갱신
+  setInterval(()=>{
+    if(document.visibilityState === 'visible') syncFromSheet();
+  }, SYNC_INTERVAL);
+}
+
+const K_AGENTS   = 'kga_agents_v2';
+const K_ATT      = 'kga_att_v2';
+const K_CFG      = 'kga_cfg_v2';
+const K_DEPTS    = 'kga_depts_v1';
+const K_RENEW    = 'kga_pin_renew';
+
+// ============================================================
+//  DATA HELPERS
+// ============================================================
+function load(k, def){ try{ return JSON.parse(localStorage.getItem(k)||'null') ?? def; }catch{ return def; } }
+function save(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+
+function getAgents(){ return load(K_AGENTS, []); }
+function saveAgents(a){ save(K_AGENTS, a); pushAgentsToSheet(); }
+function getRecords(){ return load(K_ATT, []); }
+function saveRecords(r){ save(K_ATT, r); }
+function getCfg(){ return load(K_CFG, {hour:9, min:0, lateMin:30}); }
+function getDepts(){ return load(K_DEPTS, ['신설동지점','호평지점','노원지점','강북지점','파주지점']); }
+function saveDepts(d){ save(K_DEPTS, d); pushSettingsToSheet({depts: d}); }
+
+function resetDeptsToDefault(){
+  const DEFAULT = ['신설동지점','호평지점','노원지점','강북지점','파주지점'];
+  if(!confirm('팀 목록을 아래 5개 지점으로 초기화합니다.\n신설동지점 / 호평지점 / 노원지점 / 강북지점 / 파주지점\n\n기존 팀 목록이 삭제됩니다. 계속하시겠습니까?')) return;
+  saveDepts(DEFAULT);
+  renderDepts();
+  renderBranchTimeList();
+  showToast('5개 지점으로 초기화됐습니다');
+}
+
+// ============================================================
+//  UTILITY
+// ============================================================
+function today(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function toTimeStr(d){ return d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false}); }
+// 지점명으로 해당 지점 시간 설정 가져오기
+function getBranchCfg(deptName){
+  const branchCfgs = load('kga_branch_cfg_v1', {});
+  if(branchCfgs[deptName]) return branchCfgs[deptName];
+  return getCfg(); // 지점별 설정 없으면 전역 기본값
+}
+function getStatus(timeStr, deptName){
+  const cfg = deptName ? getBranchCfg(deptName) : getCfg();
+  const [h,m]=timeStr.split(':').map(Number);
+  const mins=h*60+m, late=cfg.hour*60+cfg.min;
+  if(mins<=late) return '정시';
+  if(mins<=late+cfg.lateMin) return '지각';
+  return '심한지각';
+}
+
+// ============================================================
+//  휴가 관리 (교육참석 자동 인정)
+// ============================================================
+const K_LEAVES = 'kga_leaves_v1';
+
+function getLeaves(){ return load(K_LEAVES, []); }
+function saveLeaves(arr){ save(K_LEAVES, arr); pushLeavesToSheet(); }
+
+/* 휴가 종류별 라벨 (이모지 포함) */
+const LEAVE_ICONS = {
+  '경조사':'🌹', '교육출장':'📚', '병가':'🤒'
+};
+
+/* 날짜 범위 → 평일만 배열로 반환 (yyyy-mm-dd) */
+function dateRangeWeekdays(startStr, endStr){
+  const dates = [];
+  const start = new Date(startStr+'T00:00:00');
+  const end   = new Date(endStr+'T00:00:00');
+  const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
+    const day = d.getDay(); // 0=일, 6=토
+    if(day !== 0 && day !== 6){
+      dates.push(fmt(d));
+    }
+  }
+  return dates;
+}
+
+/* 휴가 탭 진입 시 초기화 */
+function initLeavesTab(){
+  // 수정 모드 상태 초기화
+  _editingLeaveId = null;
+  resetLeaveEditUI();
+  // 설계사 드롭다운 채우기
+  const searchEl = document.getElementById('leave-agent-search');
+  if(searchEl) searchEl.value = '';
+  fillLeaveAgentSelect('');
+  // 오늘 날짜 기본값
+  const todayStr = today();
+  const startEl = document.getElementById('leave-start');
+  const endEl   = document.getElementById('leave-end');
+  if(startEl && !startEl.value) startEl.value = todayStr;
+  if(endEl   && !endEl.value)   endEl.value   = todayStr;
+  renderLeaves();
+}
+
+/* 설계사 드롭다운 채우기 (검색어 필터 적용) */
+function fillLeaveAgentSelect(q){
+  const sel = document.getElementById('leave-agent');
+  if(!sel) return;
+  const agents = getAgents();
+  const query  = (q || '').trim().toLowerCase();
+  const list   = query
+    ? agents.filter(a => (a.name||'').toLowerCase().includes(query) || (a.dept||'').toLowerCase().includes(query))
+    : agents;
+  sel.innerHTML = '<option value="">' + (query ? `검색 결과 ${list.length}명` : '설계사 선택') + '</option>' +
+    list.map(a => `<option value="${a.id}">${a.name} (${a.dept})</option>`).join('');
+  // 검색 결과가 딱 1명이면 자동 선택
+  if(query && list.length === 1) sel.value = String(list[0].id);
+}
+
+/* 검색 입력 시 드롭다운 실시간 필터 */
+function filterLeaveAgents(){
+  const q = document.getElementById('leave-agent-search')?.value || '';
+  fillLeaveAgentSelect(q);
+}
+
+/* 휴가 등록 (+수정 모드) */
+let _editingLeaveId = null;
+
+async function addLeave(){
+  const agentId = document.getElementById('leave-agent').value;
+  const type    = document.getElementById('leave-type').value;
+  const start   = document.getElementById('leave-start').value;
+  const end     = document.getElementById('leave-end').value;
+  const reason  = document.getElementById('leave-reason').value.trim();
+
+  if(!agentId){ showToast('설계사를 선택하세요'); return; }
+  if(!start || !end){ showToast('시작일과 종료일을 입력하세요'); return; }
+  if(end < start){ showToast('종료일이 시작일보다 빠릅니다'); return; }
+
+  const agent = getAgents().find(a => a.id === agentId);
+  if(!agent){ showToast('설계사를 찾을 수 없습니다'); return; }
+
+  const dates = dateRangeWeekdays(start, end);
+  if(dates.length === 0){ showToast('선택 기간에 평일이 없습니다 (주말 제외)'); return; }
+
+  // 수정 모드면 기존 휴가 + 연결 기록을 먼저 제거하고 새로 등록
+  const editingId = _editingLeaveId;
+  _editingLeaveId = null;
+  const isOldLinked = r => editingId && (r.leaveId === editingId || String(r.id).startsWith(editingId + '-'));
+
+  // 휴가 레코드 저장
+  let leaves = getLeaves();
+  if(editingId) leaves = leaves.filter(l => l.id !== editingId);
+  const leaveId = 'LV-' + Date.now();
+  leaves.unshift({
+    id: leaveId,
+    agentId, agentName: agent.name, dept: agent.dept,
+    type,
+    start, end, reason,
+    dates,
+    createdAt: today()
+  });
+  saveLeaves(leaves);
+
+  // 교육참석 기록에 자동 추가 (status: 🏖 형식)
+  let records = getRecords();
+  if(editingId) records = records.filter(r => !isOldLinked(r));
+  const statusText = `🏖 ${type}`;
+  let addedCount = 0, skippedCount = 0;
+  dates.forEach((d, i) => {
+    // 같은 날짜 같은 설계사가 이미 기록되어 있으면 스킵
+    const exists = records.find(r => r.agentId===agentId && r.date===d);
+    if(exists){ skippedCount++; return; }
+    records.unshift({
+      id: leaveId + '-' + i,
+      agentId, name: agent.name, dept: agent.dept,
+      pin: agent.pin, time: '09:00',
+      date: d, status: statusText,
+      leaveId, leaveType: type, leaveReason: reason
+    });
+    addedCount++;
+  });
+  saveRecords(records);
+
+  // 입력 초기화
+  const lvSearch = document.getElementById('leave-agent-search');
+  if(lvSearch) lvSearch.value = '';
+  fillLeaveAgentSelect('');
+  document.getElementById('leave-reason').value = '';
+  resetLeaveEditUI();
+  renderLeaves();
+  renderDashboard();
+  showToast(`${agent.name} 님 ${type} ${editingId?'수정':'등록'} (${addedCount}일 인정${skippedCount>0?`, ${skippedCount}일 중복`:''})`);
+
+  // ★ 인정 기록도 시트에 반영 (기존 버그 수정: 이전에는 휴가만 저장되고 기록은 전송 누락)
+  if(addedCount > 0 || editingId){
+    showSyncStatus('☁️ 교육참석 인정 기록 시트 반영 중...');
+    const ok = await pushRecordsToSheet();
+    if(ok){ showSyncStatus('✅ 시트 반영 완료', 2000); }
+    else { showSyncStatus('⚠️ 기록 시트 반영 실패 — 휴가를 삭제 후 다시 등록해주세요', 6000); }
+  }
+}
+
+/* 휴가 수정 시작 — 폼에 기존 값 채우기 */
+function startEditLeave(leaveId){
+  const leave = getLeaves().find(l => l.id === leaveId);
+  if(!leave){ showToast('휴가를 찾을 수 없습니다'); return; }
+  // 설계사 선택 (검색창에 이름 넣고 필터 → 자동 선택)
+  const searchEl = document.getElementById('leave-agent-search');
+  if(searchEl) searchEl.value = leave.agentName;
+  fillLeaveAgentSelect(leave.agentName);
+  const sel = document.getElementById('leave-agent');
+  if(sel) sel.value = String(leave.agentId);
+  document.getElementById('leave-type').value   = leave.type;
+  document.getElementById('leave-start').value  = leave.start;
+  document.getElementById('leave-end').value    = leave.end;
+  document.getElementById('leave-reason').value = leave.reason || '';
+  _editingLeaveId = leaveId;
+  const btn = document.getElementById('leave-submit-btn');
+  if(btn) btn.textContent = '✏️ 수정 완료';
+  const notice = document.getElementById('leave-edit-notice');
+  if(notice){ notice.style.display = 'block'; document.getElementById('leave-edit-name').textContent = leave.agentName; }
+  document.getElementById('leave-agent-search')?.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+/* 휴가 수정 취소 */
+function cancelEditLeave(){
+  _editingLeaveId = null;
+  const lvSearch = document.getElementById('leave-agent-search');
+  if(lvSearch) lvSearch.value = '';
+  fillLeaveAgentSelect('');
+  document.getElementById('leave-reason').value = '';
+  resetLeaveEditUI();
+  showToast('수정을 취소했습니다');
+}
+
+/* 수정 모드 UI 원복 */
+function resetLeaveEditUI(){
+  const btn = document.getElementById('leave-submit-btn');
+  if(btn) btn.textContent = '휴가 등록';
+  const notice = document.getElementById('leave-edit-notice');
+  if(notice) notice.style.display = 'none';
+}
+
+/* 휴가 삭제 — 연결된 출석 기록도 함께 삭제 */
+async function deleteLeave(leaveId){
+  const leaves = getLeaves();
+  const leave = leaves.find(l => l.id === leaveId);
+  if(!leave) return;
+  if(!confirm(`${leave.agentName} 님의 ${leave.type} 휴가를 삭제할까요?\n해당 기간의 교육참석 인정 기록도 함께 삭제됩니다.`)) return;
+
+  saveLeaves(leaves.filter(l => l.id !== leaveId));
+  // 연결된 출석 기록 삭제 (leaveId 또는 id 접두어로 매칭 — 시트 왕복 시 leaveId 유실 대비)
+  const isLinked = r => r.leaveId === leaveId || String(r.id).startsWith(leaveId + '-');
+  const hadLinked = getRecords().some(isLinked);
+  saveRecords(getRecords().filter(r => !isLinked(r)));
+
+  renderLeaves();
+  renderDashboard();
+  showToast('휴가가 삭제됐습니다');
+
+  // 연결된 출석 기록이 있었으면 시트에도 반영
+  if(hadLinked){
+    showSyncStatus('☁️ 시트에 반영 중...');
+    const ok = await pushRecordsToSheet();
+    if(ok){ showSyncStatus('✅ 시트 반영 완료', 2000); }
+    else { showSyncStatus('⚠️ 시트 반영 실패', 5000); }
+  }
+}
+
+/* 휴가 상태 계산 */
+function leaveStatus(leave){
+  const t = today();
+  if(t < leave.start) return 'upcoming';
+  if(t > leave.end)   return 'past';
+  return 'active';
+}
+
+/* 휴가 목록 렌더링 */
+function renderLeaves(){
+  const tbody = document.getElementById('leave-tbody');
+  const empty = document.getElementById('leave-empty');
+  if(!tbody) return;
+
+  const q     = (document.getElementById('leave-search')?.value || '').trim();
+  const fType = document.getElementById('leave-filter-type')?.value || '';
+  const fStat = document.getElementById('leave-filter-status')?.value || '';
+
+  let list = getLeaves();
+  if(q)     list = list.filter(l => l.agentName.includes(q));
+  if(fType) list = list.filter(l => l.type === fType);
+  if(fStat) list = list.filter(l => leaveStatus(l) === fStat);
+
+  // 통계 갱신
+  const allLeaves = getLeaves();
+  const month = currentMonth();
+  document.getElementById('lv-total').textContent  = allLeaves.length;
+  document.getElementById('lv-active').textContent = allLeaves.filter(l => leaveStatus(l)==='active').length;
+  document.getElementById('lv-month').textContent  = allLeaves.filter(l => l.start.startsWith(month) || l.end.startsWith(month)).length;
+  document.getElementById('lv-days').textContent   = allLeaves.reduce((sum, l) => sum + (l.dates?.length || 0), 0);
+
+  if(!list.length){ tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  tbody.innerHTML = list.map(l => {
+    const st = leaveStatus(l);
+    const stBadge = st==='active'
+      ? '<span class="badge badge-on">진행중</span>'
+      : st==='upcoming'
+        ? '<span class="badge" style="background:#e3f2fd;color:#1565c0">예정</span>'
+        : '<span class="badge" style="background:#f5f5f5;color:#666">완료</span>';
+    const periodStr = l.start === l.end
+      ? l.start
+      : `${l.start} ~ ${l.end}`;
+    return `<tr>
+      <td><span class="avatar">${l.agentName[0]}</span>${l.agentName}</td>
+      <td><span class="dept-tag">${l.dept}</span></td>
+      <td>${LEAVE_ICONS[l.type]||''} ${l.type}</td>
+      <td style="font-size:12px">${periodStr}</td>
+      <td style="text-align:center;font-weight:600">${l.dates?.length || 0}일</td>
+      <td style="font-size:12px;color:var(--text2)">${l.reason || '-'}</td>
+      <td>${stBadge}</td>
+      <td style="white-space:nowrap"><button onclick="startEditLeave('${l.id}')" style="border:none;background:none;cursor:pointer;font-size:14px;padding:0 4px" title="수정">✏️</button><button onclick="deleteLeave('${l.id}')" style="border:none;background:none;cursor:pointer;color:var(--red);font-size:17px;padding:0 4px" title="삭제">×</button></td>
+    </tr>`;
+  }).join('');
+}
+
+/* 휴가 엑셀 다운로드 */
+function exportLeaves(){
+  const list = getLeaves();
+  if(!list.length){ showToast('내보낼 휴가 기록이 없습니다'); return; }
+  const data = [
+    ['이름','지점','휴가종류','시작일','종료일','인정일수','사유','등록일'],
+    ...list.map(l => [
+      l.agentName, l.dept, l.type, l.start, l.end,
+      l.dates?.length || 0,
+      l.reason || '', l.createdAt || ''
+    ])
+  ];
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:10},{wch:10},{wch:10},{wch:12},{wch:12},{wch:8},{wch:24},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws, '휴가목록');
+  XLSX.writeFile(wb, 'KGA_휴가목록_' + today() + '.xlsx');
+  showToast(list.length + '건 엑셀 저장 완료');
+}
+
+function statusBadge(s){
+  if(s && s.startsWith('🏖')) return`<span class="badge" style="background:#ede7f6;color:#5e35b1">${s}</span>`;
+  if(s==='정시') return`<span class="badge badge-on">정시</span>`;
+  if(s==='지각') return`<span class="badge badge-late">지각</span>`;
+  if(s==='심한지각') return`<span class="badge badge-very">심한지각</span>`;
+  return`<span class="badge" style="background:#f5f5f5;color:#666">${s||'-'}</span>`;
+}
+function showToast(msg, dur=2500){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.display='block';
+  clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none', dur);
+}
+function currentMonth(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+
+// ============================================================
+//  SECURITY — 기기 지문 + GPS 위치 인증 (지점별 다중 위치)
+// ============================================================
+
+const K_SEC      = 'kga_sec_v1';      // 보안 설정 {gps, dev, radius}
+const K_DEV      = 'kga_devices_v1';  // {agentId: fingerprint}
+const K_BRANCHES = 'kga_branches_v1'; // [{id, name, lat, lon}]
+const K_TMAP     = 'kga_tmap_v1';     // {팀이름: branchId}
+
+function getSecCfg()  { return load(K_SEC, { gps:false, dev:false, radius:100 }); }
+function getDevices() { return load(K_DEV, {}); }
+function getBranches(){
+  const DEFAULT_BRANCHES = [
+    {id:'B001', name:'신설동지점', lat:37.57476, lon:127.02554, addr:'서울 동대문구 신설동'},
+    {id:'B002', name:'호평지점',   lat:37.65731, lon:127.30029, addr:'경기 남양주시 호평역'},
+    {id:'B003', name:'노원지점',   lat:37.66171, lon:127.07134, addr:'서울 노원구 상계3동'},
+    {id:'B004', name:'강북지점',   lat:37.63840, lon:127.02557, addr:'서울 강북구 수유역'},
+    {id:'B005', name:'파주지점',   lat:37.73540, lon:126.72680, addr:'경기 파주시 삼릉로 (왕릉역)'},
+  ];
+  const saved = load(K_BRANCHES, null);
+  if(saved !== null) return saved;
+  // 최초 실행 시 기본 지점 저장
+  save(K_BRANCHES, DEFAULT_BRANCHES);
+  return DEFAULT_BRANCHES;
+}
+function getTeamMap() { return load(K_TMAP, {}); }
+
+/* ── 브라우저 핑거프린트 (SHA-256) ── */
+async function getFingerprint(){
+  const raw = [navigator.userAgent, navigator.language,
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+    screen.width+'x'+screen.height+'x'+screen.colorDepth].join('|');
+  if(window.crypto && crypto.subtle){
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,32);
+  }
+  // 폴백: crypto.subtle 미지원 환경 (일부 로컬 실행)
+  let h1=0x811c9dc5, h2=0x01000193;
+  for(let i=0;i<raw.length;i++){ h1=(h1^raw.charCodeAt(i))*16777619>>>0; h2=(h2*31+raw.charCodeAt(i))>>>0; }
+  return (h1.toString(16).padStart(8,'0')+h2.toString(16).padStart(8,'0')).repeat(2).slice(0,32);
+}
+
+/* ── GPS 위치 ── */
+function getCurrentPos(){
+  return new Promise((res,rej)=>{
+    if(!navigator.geolocation){ rej(new Error('GPS_UNSUPPORTED')); return; }
+    navigator.geolocation.getCurrentPosition(
+      p=>res({lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy}),
+      ()=>rej(new Error('GPS_DENIED')),
+      {timeout:8000, maximumAge:30000, enableHighAccuracy:true}
+    );
+  });
+}
+
+/* ── Haversine 거리 (m) ── */
+function haversine(lat1,lon1,lat2,lon2){
+  const R=6371000,r=Math.PI/180,dLat=(lat2-lat1)*r,dLon=(lon2-lon1)*r;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+/* ── 지점 목록 렌더링 ── */
+function renderBranchList(){
+  const el = document.getElementById('branch-loc-list');
+  if(!el) return;
+  const branches = getBranches();
+  if(!branches.length){
+    el.innerHTML='<p style="font-size:12px;color:var(--text2)">등록된 지점이 없습니다.</p>';
+    return;
+  }
+  el.innerHTML = branches.map(b=>{
+    const hasLoc = b.lat && b.lon;
+    return `<div style="background:#fff;border:1px solid var(--gray-border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:4px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:${hasLoc?'6px':'0'}">
+        <span style="font-size:13px;font-weight:700;color:var(--primary);min-width:80px">${b.name}</span>
+        <span style="font-size:11px;color:var(--text2);flex:1">${b.addr||''}</span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;background:${hasLoc?'var(--green-bg)':'#fff3e0'};color:${hasLoc?'var(--green)':'var(--amber)'}">
+          ${hasLoc?'✅ 위치등록':'⚠ 미등록'}
+        </span>
+      </div>
+      ${hasLoc?`<div style="font-size:11px;color:var(--text2);margin-bottom:6px">
+        📍 ${b.lat.toFixed(5)}, ${b.lon.toFixed(5)}
+        <a href="https://maps.google.com/?q=${b.lat},${b.lon}" target="_blank" style="margin-left:8px;color:var(--accent);text-decoration:none">지도 확인 ↗</a>
+      </div>`:''}
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="registerBranchLoc('${b.id}')" style="height:28px;padding:0 10px;font-size:11px;border:1px solid var(--accent);background:#fff;color:var(--accent);border-radius:6px;cursor:pointer">📌 현재 GPS 등록</button>
+        <button onclick="manualBranchLoc('${b.id}')" style="height:28px;padding:0 10px;font-size:11px;border:1px solid var(--gray-border);background:#fff;color:var(--text2);border-radius:6px;cursor:pointer">✏ 좌표 직접 입력</button>
+        <button onclick="deleteBranch('${b.id}')" style="height:28px;padding:0 8px;font-size:11px;border:1px solid #fcc;background:#fff;color:var(--red);border-radius:6px;cursor:pointer">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── 좌표 직접 입력 (현장 GPS 없을 때) ── */
+async function manualBranchLoc(id){
+  const branches = getBranches();
+  const b = branches.find(x=>x.id===id);
+  if(!b) return;
+  const input = prompt(b.name + ' 위도,경도 입력 (예: 37.57476, 127.02554)\n구글맵에서 핀 찍은 후 복사 붙여넣기', b.lat ? b.lat+', '+b.lon : '');
+  if(!input || !input.trim()) return;
+  const parts = input.split(',').map(s=>parseFloat(s.trim()));
+  if(parts.length<2 || isNaN(parts[0]) || isNaN(parts[1])){
+    showToast('올바른 형식이 아닙니다. 예) 37.57476, 127.02554'); return;
+  }
+  b.lat = parts[0]; b.lon = parts[1];
+  save(K_BRANCHES, branches);
+  renderBranchList();
+  showSyncStatus('☁️ 시트에 좌표 저장 중...');
+  const ok = await pushSettingsToSheet({branches});
+  if(ok){
+    showSyncStatus('✅ 모든 기기에 반영됨', 3000);
+    showToast('✅ '+b.name+' 좌표 저장 완료');
+  } else {
+    showSyncStatus('⚠️ 시트 반영 실패', 4000);
+    showToast(b.name+' 로컬 저장만 됨');
+  }
+}
+
+/* ── 지점 추가 ── */
+async function addBranch(){
+  const name = prompt('지점 이름을 입력하세요\n예) 신설동지점, 호평지점');
+  if(!name || !name.trim()) return;
+  const branches = getBranches();
+  if(branches.find(b=>b.name===name.trim())){ showToast('이미 같은 이름의 지점이 있습니다'); return; }
+  branches.push({id:'B'+Date.now(), name:name.trim(), lat:null, lon:null});
+  save(K_BRANCHES, branches);
+  renderBranchList();
+  renderTeamMap();
+  await pushSettingsToSheet({branches});
+}
+
+/* ── 지점 삭제 ── */
+function deleteBranch(id){
+  const branches = getBranches();
+  const b = branches.find(x=>x.id===id);
+  if(!b || !confirm(`"${b.name}"을 삭제할까요?`)) return;
+  save(K_BRANCHES, branches.filter(x=>x.id!==id));
+  // 팀 매핑에서도 제거
+  const tmap = getTeamMap();
+  Object.keys(tmap).forEach(k=>{ if(tmap[k]===id) delete tmap[k]; });
+  save(K_TMAP, tmap);
+  renderBranchList(); renderTeamMap();
+}
+
+/* ── 지점 위치 등록 (현재 GPS) ── */
+async function registerBranchLoc(id){
+  const branches = getBranches();
+  const b = branches.find(x=>x.id===id);
+  if(!b) return;
+  showToast('GPS 위치 가져오는 중...');
+  try {
+    const pos = await getCurrentPos();
+    b.lat = pos.lat; b.lon = pos.lon;
+    save(K_BRANCHES, branches);
+    renderBranchList();
+    // 시트에 즉시 푸시
+    showSyncStatus('☁️ 시트에 위치 저장 중...');
+    const ok = await pushSettingsToSheet({branches});
+    if(ok){
+      showSyncStatus('✅ 모든 기기에 반영됨', 3000);
+      showToast(`✅ "${b.name}" 위치 등록 완료 (정확도 ±${Math.round(pos.acc)}m)`);
+    } else {
+      showSyncStatus('⚠️ 시트 반영 실패', 4000);
+      showToast(`"${b.name}" 로컬 저장만 됨 — 시트 반영 실패`);
+    }
+  } catch(e){
+    showToast('위치 권한을 허용해주세요.');
+  }
+}
+
+/* ── 팀 → 지점 매핑 렌더링 ── */
+function renderTeamMap(){
+  const el = document.getElementById('team-branch-map');
+  if(!el) return;
+  const depts    = getDepts();
+  const branches = getBranches();
+  const tmap     = getTeamMap();
+  if(!depts.length){ el.innerHTML='<p style="font-size:12px;color:var(--text2)">등록된 팀이 없습니다.</p>'; return; }
+  if(!branches.length){ el.innerHTML='<p style="font-size:12px;color:var(--text2)">먼저 위에서 지점을 추가하세요.</p>'; return; }
+  const opts = branches.map(b=>`<option value="${b.id}" ${tmap[b.name]===b.id||tmap[dept]===b.id?'selected':''}>${b.name}</option>`).join('');
+  el.innerHTML = depts.map(dept=>{
+    const sel = tmap[dept] || '';
+    return `<div style="display:flex;align-items:center;gap:10px;font-size:13px">
+      <span style="min-width:60px;font-weight:500">${dept}</span>
+      <span style="color:var(--text2)">→</span>
+      <select onchange="saveTeamMap('${dept}',this.value)" style="height:32px;flex:1;font-size:13px">
+        <option value="">-- 지점 선택 --</option>
+        ${branches.map(b=>`<option value="${b.id}" ${sel===b.id?'selected':''}>${b.name}</option>`).join('')}
+      </select>
+    </div>`;
+  }).join('');
+}
+
+/* ── 팀 → 지점 매핑 저장 ── */
+async function saveTeamMap(dept, branchId){
+  const tmap = getTeamMap();
+  if(branchId) tmap[dept] = branchId;
+  else delete tmap[dept];
+  save(K_TMAP, tmap);
+  showToast(`${dept} → 지점 매핑 저장됨`);
+}
+
+/* ── 보안 설정 저장 ── */
+async function saveSecCfg(){
+  const gps    = document.getElementById('cfg-gps')?.checked || false;
+  const dev    = document.getElementById('cfg-dev')?.checked || false;
+  const radius = parseInt(document.getElementById('cfg-radius')?.value || '100');
+  save(K_SEC, {gps, dev, radius});
+  const sub = document.getElementById('gps-sub');
+  if(sub) sub.style.display = gps ? 'block' : 'none';
+  await pushSettingsToSheet({secCfg: {gps, dev, radius}});
+  showToast('보안 설정이 저장됐습니다');
+}
+
+/* ── 보안 설정 UI 로드 ── */
+function loadSecCfg(){
+  loadPinModeUI();
+  const cfg = getSecCfg();
+  const gpsEl = document.getElementById('cfg-gps');
+  const devEl = document.getElementById('cfg-dev');
+  const radEl = document.getElementById('cfg-radius');
+  const sub   = document.getElementById('gps-sub');
+  if(gpsEl) gpsEl.checked = cfg.gps;
+  if(devEl) devEl.checked = cfg.dev;
+  if(radEl) radEl.value   = cfg.radius;
+  if(sub)   sub.style.display = cfg.gps ? 'block' : 'none';
+  renderBranchList();
+  renderTeamMap();
+  renderDeviceResetList();
+}
+
+/* ── 기기 초기화 목록 렌더링 ── */
+function renderDeviceResetList(){
+  const el = document.getElementById('device-reset-list');
+  if(!el) return;
+  const q       = (document.getElementById('dev-reset-search')?.value||'').trim();
+  const agents  = getAgents();
+  const devices = getDevices();
+  const list    = agents.filter(a=>!q||a.name.includes(q));
+  if(!list.length){ el.innerHTML='<p style="padding:12px;font-size:13px;color:var(--text2);text-align:center">설계사가 없습니다</p>'; return; }
+  el.innerHTML = list.map(a=>{
+    const has = !!devices[a.id];
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">
+      <span><strong>${a.name}</strong> <span class="dept-tag" style="margin-left:6px">${a.dept}</span></span>
+      <span>
+        ${has
+          ? `<span style="font-size:11px;color:var(--green);margin-right:8px">📱 등록됨</span>
+             <button onclick="resetDevice('${a.id}')" style="height:28px;padding:0 10px;font-size:11px;border:1px solid var(--red);background:#fff;color:var(--red);border-radius:6px;cursor:pointer">초기화</button>`
+          : `<span style="font-size:11px;color:var(--text2)">미등록</span>`}
+      </span>
+    </div>`;
+  }).join('');
+}
+
+/* ── 기기 초기화 ── */
+function resetDevice(agentId){
+  const agent = getAgents().find(a=>a.id===agentId);
+  if(!agent||!confirm(`${agent.name} 님의 기기를 초기화합니다.\n다음 교육참석 시 새 기기로 재등록됩니다.`)) return;
+
+  const devices = getDevices();
+  delete devices[agentId];
+  save(K_DEV, devices);
+  renderDeviceResetList();
+  showToast(`${agent.name} 님 기기 초기화 완료`);
+}
+
+/* ── 체크인 진입 시 보안 상태 초기화 ── */
+let _currentPos = null;
+let _currentFp  = null;
+
+async function initSecurityCheck(){
+  const cfg   = getSecCfg();
+  const locEl = document.getElementById('sec-loc');
+  const devEl = document.getElementById('sec-dev');
+
+  /* 기기 지문 — 항상 수집 */
+  _currentFp = await getFingerprint();
+  if(cfg.dev){
+    if(devEl){ devEl.textContent='📱 기기인증 ON'; devEl.style.background='#e8f5e9'; devEl.style.color='#2e7d32'; }
+  } else {
+    if(devEl){ devEl.textContent='📱 기기인증 OFF'; devEl.style.background='#f5f5f5'; devEl.style.color='#aaa'; }
+  }
+
+  /* GPS — PIN 입력 전에 미리 받아두기 */
+  if(cfg.gps){
+    if(locEl){ locEl.textContent='📍 위치 가져오는 중...'; locEl.style.background='#f5f5f5'; locEl.style.color='#888'; }
+    try {
+      _currentPos = await getCurrentPos();
+      /* 어느 지점 반경에 있는지 미리 계산해서 표시 */
+      const branches = getBranches().filter(b=>b.lat&&b.lon);
+      const radius   = cfg.radius;
+      const nearby   = branches.find(b=>haversine(_currentPos.lat,_currentPos.lon,b.lat,b.lon)<=radius);
+      if(nearby){
+        const dist = Math.round(haversine(_currentPos.lat,_currentPos.lon,nearby.lat,nearby.lon));
+        if(locEl){ locEl.textContent=`📍 ${nearby.name} (${dist}m)`; locEl.style.background='#e8f5e9'; locEl.style.color='#2e7d32'; }
+      } else {
+        if(locEl){ locEl.textContent='📍 위치 확인됨 (지점 밖)'; locEl.style.background='#fff3e0'; locEl.style.color='#e65100'; }
+      }
+    } catch(e){
+      _currentPos = null;
+      if(locEl){ locEl.textContent='📍 위치 권한 필요'; locEl.style.background='#ffebee'; locEl.style.color='#c62828'; }
+    }
+  } else {
+    _currentPos = null;
+    if(locEl){ locEl.textContent='📍 위치인증 OFF'; locEl.style.background='#f5f5f5'; locEl.style.color='#aaa'; }
+  }
+}
+
+/* ── setCompanyLocation 구버전 호환 stub ── */
+function setCompanyLocation(){ showToast('지점별 위치 등록은 설정 탭 → 지점별 위치 등록에서 하세요.'); }
+function updateCompanyLocLabel(){}
+function getCompanyLoc(){ return null; } // 더 이상 단일 위치 사용 안 함
+
+// ============================================================
+//  PIN GENERATION
+// ============================================================
+
+// ============================================================
+//  PIN 방식 관리 (핸드폰 뒷 4자리 / 임의번호)
+// ============================================================
+const K_PIN_MODE = 'kga_pin_mode_v1'; // 'phone' | 'random'
+
+function getPinMode(){ return load(K_PIN_MODE, 'random'); }
+async function savePinMode(m){ save(K_PIN_MODE, m); await pushSettingsToSheet({pinMode: m}); }
+
+/* 핸드폰번호에서 뒷 4자리 추출 */
+function phoneLastFour(phone){
+  if(!phone) return null;
+  const digits = phone.replace(/\D/g, ''); // 숫자만
+  if(digits.length < 4) return null;
+  return digits.slice(-4);
+}
+
+/* PIN 방식에 따라 설계사 1명의 새 PIN 계산 (미리보기/실제 공통) */
+function calcNewPin(agent, usedPins, mode){
+  if(mode === 'phone'){
+    const tail = phoneLastFour(agent.phone);
+    if(tail && tail !== '0000'){
+      // 핸드폰 뒷 4자리 — 중복이더라도 그대로 허용 (개인 번호니까)
+      return { pin: tail, note: '핸드폰 뒷자리' };
+    } else {
+      // 연락처 없거나 0000이면 임의 부여
+      let pin;
+      do { pin = String(Math.floor(1000+Math.random()*9000)); } while(usedPins.has(pin));
+      usedPins.add(pin);
+      return { pin, note: tail ? '0000→임의' : '연락처없음→임의' };
+    }
+  } else {
+    let pin;
+    do { pin = String(Math.floor(1000+Math.random()*9000)); } while(usedPins.has(pin));
+    usedPins.add(pin);
+    return { pin, note: '임의발급' };
+  }
+}
+
+/* UI 라디오 변경 시 */
+function onPinModeChange(){
+  const checked = document.querySelector('input[name="pin-mode"]:checked');
+  if(!checked) return;
+  const mode = checked.value; // 'phone' or 'random'
+  savePinMode(mode);           // 즉시 저장
+  setAgentsPinMode(mode);      // 버튼 스타일 + 경고 + 미리보기 초기화 동기화
+}
+
+/* 갱신 미리보기 */
+function previewPinRenew(){
+  const agents = getAgents();
+  if(!agents.length){ showToast('등록된 설계사가 없습니다'); return; }
+  // UI에서 직접 읽어 저장 타이밍 문제 방지
+  const radioChecked = document.querySelector('input[name="pin-mode"]:checked');
+  const agentsPhoneBtn = document.getElementById('agents-pin-phone');
+  let mode;
+  if(radioChecked){
+    mode = radioChecked.value;
+  } else if(agentsPhoneBtn && agentsPhoneBtn.style.background.includes('var(--primary)')){
+    mode = 'phone';
+  } else {
+    mode = getPinMode();
+  }
+  savePinMode(mode);
+  const usedPins = new Set(); // 임의 방식 중복 방지용
+  const rows = agents.map(a => {
+    const { pin: newPin, note } = calcNewPin(a, usedPins, mode);
+    return { name:a.name, dept:a.dept, curPin:a.pin, newPin, note,
+             changed: a.pin !== newPin };
+  });
+
+  const tbody = document.getElementById('pin-preview-tbody');
+  const wrap  = document.getElementById('pin-preview-wrap');
+  if(!tbody || !wrap) return;
+
+  tbody.innerHTML = rows.map(r => `<tr style="background:${r.changed?'#fff':'#f9f9f9'}">
+    <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0;font-weight:600">${r.name}</td>
+    <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0;color:var(--text2)">${r.dept}</td>
+    <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0;font-family:monospace;letter-spacing:2px">${r.curPin}</td>
+    <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0;font-family:monospace;letter-spacing:2px;font-weight:700;color:${r.changed?'var(--green)':'var(--text2)'}">${r.newPin}</td>
+    <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0;font-size:11px;color:var(--text2)">${r.note}</td>
+  </tr>`).join('');
+
+  wrap.style.display = 'block';
+  const changed = rows.filter(r=>r.changed).length;
+  showToast('미리보기: '+changed+'명 PIN 변경 예정');
+}
+
+/* loadSecCfg 에서 PIN 방식 라디오 초기화 */
+function loadPinModeUI(){
+  const mode = getPinMode();
+  const el = document.getElementById('pin-mode-'+mode);
+  if(el) el.checked = true;
+  const warn = document.getElementById('pin-phone-warn');
+  if(warn) warn.style.display = mode==='phone' ? 'block' : 'none';
+}
+
+function genPin(){
+  // 4자리 고유 PIN, 0000 제외
+  const agents = getAgents();
+  const used = new Set(agents.map(a=>a.pin));
+  let pin;
+  do { pin = String(Math.floor(1000+Math.random()*9000)); } while(used.has(pin));
+  return pin;
+}
+
+function renewAllPins(){
+  // UI 라디오 → localStorage 순서로 현재 선택 모드 확실하게 읽기
+  const radioChecked = document.querySelector('input[name="pin-mode"]:checked');
+  const agentsPhoneBtn = document.getElementById('agents-pin-phone');
+  let mode;
+  if(radioChecked){
+    mode = radioChecked.value;
+  } else if(agentsPhoneBtn && agentsPhoneBtn.style.background.includes('var(--primary)')){
+    mode = 'phone';
+  } else {
+    mode = getPinMode(); // localStorage fallback
+  }
+  // 읽은 값을 즉시 저장해서 동기화
+  savePinMode(mode);
+  setAgentsPinMode(mode);
+  const modeLabel = mode==='phone' ? '핸드폰 뒷 4자리' : '임의 4자리';
+  if(!confirm('전체 설계사의 PIN을 갱신합니다.\n방식: '+modeLabel+'\n기존 번호로는 더 이상 교육참석할 수 없습니다.\n계속하시겠습니까?')) return;
+  const agents = getAgents();
+  const usedPins = new Set();
+  let phoneCount=0, randomCount=0;
+  agents.forEach(a=>{
+    const {pin, note} = calcNewPin(a, usedPins, mode);
+    a.pin = pin;
+    a.pinMonth = currentMonth();
+    if(note.includes('임의')) randomCount++; else phoneCount++;
+  });
+  saveAgents(agents);
+  save(K_RENEW, {month:currentMonth(), date:today()});
+  // 미리보기 닫기
+  const pw=document.getElementById('pin-preview-wrap'); if(pw) pw.style.display='none';
+  renderAgents();
+  updateRenewInfo();
+  const msg = mode==='phone'
+    ? '갱신 완료: 핸드폰뒷자리 '+phoneCount+'명, 임의발급 '+randomCount+'명'
+    : agents.length+'명 임의 PIN 갱신 완료';
+  showToast(msg, 4000);
+}
+
+// ============================================================
+//  NUMPAD / PIN CHECK
+// ============================================================
+let pinBuffer = '';
+
+function numPress(n){
+  if(pinBuffer.length>=4) return;
+  pinBuffer += n;
+  updateDots();
+  if(pinBuffer.length===4) setTimeout(checkPin, 120);
+}
+function numDel(){
+  pinBuffer = pinBuffer.slice(0,-1);
+  updateDots();
+  document.getElementById('pin-error').textContent='';
+}
+function updateDots(){
+  for(let i=0;i<4;i++){
+    const d=document.getElementById('d'+i);
+    d.classList.toggle('filled', i<pinBuffer.length);
+    d.classList.remove('error');
+  }
+}
+
+async function checkPin(){
+  if(LOCAL_ADMIN){
+    showToast('로컬 관리자 버전에서는 체크인할 수 없습니다. 출석은 QR(att.mykga.kr)에서만 가능합니다.');
+    pinBuffer=''; updateDots();
+    return;
+  }
+  const cfg     = getSecCfg();
+  const agents  = getAgents();
+  const agent   = agents.find(a=>String(a.pin).padStart(4,'0')===pinBuffer);
+
+  /* ① PIN 불일치 */
+  if(!agent){
+    for(let i=0;i<4;i++){ const d=document.getElementById('d'+i); d.classList.add('error','shake'); }
+    document.getElementById('pin-error').textContent='등록되지 않은 번호입니다. 다시 시도하세요.';
+    setTimeout(()=>{ pinBuffer=''; updateDots(); document.querySelectorAll('.pin-dot').forEach(d=>d.classList.remove('shake')); }, 700);
+    return;
+  }
+
+  /* ② 오늘 이미 교육참석 */
+  const todayStr = today();
+  const already  = getRecords().find(r=>r.agentId===agent.id && r.date===todayStr);
+  if(already){
+    document.getElementById('already-msg').textContent=`${agent.name} 님은 오늘 ${already.time}에 이미 교육참석 처리됐습니다.`;
+    document.getElementById('already-msg').style.display='block';
+    document.getElementById('pin-error').textContent='';
+    pinBuffer=''; updateDots();
+    setTimeout(()=>{ document.getElementById('already-msg').style.display='none'; }, 4000);
+    return;
+  }
+
+  /* ③ 기기 지문 검증 */
+  if(cfg.dev){
+    const fp      = _currentFp || await getFingerprint();
+    const devices = getDevices();
+    if(!devices[agent.id]){
+      // 첫 체크인 — 이 기기를 등록
+      devices[agent.id] = fp;
+      save(K_DEV, devices);
+    } else if(devices[agent.id] !== fp){
+      pinErr('🚫 등록된 기기가 아닙니다. 본인 스마트폰으로 체크인하세요.');
+      logSecurityAlert(agent, '기기불일치');
+      return;
+    }
+  }
+
+  /* ④ GPS 위치 검증 — 소속팀 → 지점 좌표로 비교 */
+  if(cfg.gps){
+    // 소속 지점 찾기 (수동 매핑 → 자동 이름매칭 순서)
+    const tmap     = getTeamMap();
+    const branches = getBranches();
+    let branch = null;
+    const branchId = tmap[agent.dept];
+    if(branchId){
+      branch = branches.find(b=>b.id===branchId);
+    }
+    // 매핑이 없으면 팀명과 지점명이 같은 곳 자동 매칭
+    if(!branch){
+      branch = branches.find(b=>b.name===agent.dept);
+    }
+
+    if(!branch){
+      pinErr(`⚠️ "${agent.dept}" 팀의 지점이 설정되지 않았습니다. 관리자에게 문의하세요.`);
+      return;
+    }
+    if(!branch.lat || !branch.lon){
+      pinErr(`⚠️ "${branch.name}"의 위치가 등록되지 않았습니다. 관리자에게 문의하세요.`);
+      return;
+    }
+
+    let pos = _currentPos;
+    if(!pos){
+      try { pos = await getCurrentPos(); _currentPos = pos; }
+      catch(e){ pinErr('📍 위치 권한을 허용해야 체크인할 수 있습니다.'); return; }
+    }
+    const dist = Math.round(haversine(pos.lat, pos.lon, branch.lat, branch.lon));
+    if(dist > cfg.radius){
+      pinErr(`📍 ${branch.name} 반경(${cfg.radius}m) 밖입니다. 현재: ${dist}m`);
+      logSecurityAlert(agent, `위치이탈 ${branch.name} ${dist}m`);
+      return;
+    }
+  }
+
+  /* ✅ 모든 검증 통과 — 체크인 완료 */
+  const now     = new Date();
+  const timeStr = toTimeStr(now);
+  const status  = getStatus(timeStr, agent.dept);
+  const rec = {
+    id: String(Date.now()), agentId: agent.id,
+    name: agent.name, dept: agent.dept, pin: agent.pin,
+    time: timeStr, date: todayStr, status,
+    fp: _currentFp ? _currentFp.slice(0,8) : '',   // 기록용 (앞 8자리만)
+    lat: _currentPos ? _currentPos.lat.toFixed(5) : '',
+    lon: _currentPos ? _currentPos.lon.toFixed(5) : '',
+  };
+  const recs = getRecords(); recs.unshift(rec); saveRecords(recs);
+  pushRecordToSheet(rec); // 시트에 즉시 푸시
+
+  document.getElementById('pin-form').style.display='none';
+  document.getElementById('success-wrap').style.display='block';
+  document.getElementById('suc-name').textContent=agent.name+' 님, 교육참석 완료!';
+  document.getElementById('suc-time').textContent=todayStr+' · '+timeStr;
+  const smap={정시:'✅ 정시 교육참석',지각:'⚠️ 지각',심한지각:'🔴 심한 지각'};
+  document.getElementById('suc-status').textContent=smap[status];
+  document.getElementById('pin-error').textContent='';
+}
+
+/* ── PIN 오류 표시 헬퍼 ── */
+function pinErr(msg){
+  for(let i=0;i<4;i++){ const d=document.getElementById('d'+i); d.classList.add('error','shake'); }
+  document.getElementById('pin-error').textContent=msg;
+  setTimeout(()=>{ pinBuffer=''; updateDots(); document.querySelectorAll('.pin-dot').forEach(d=>d.classList.remove('shake')); }, 1200);
+}
+
+/* ── 보안 이벤트 로그 (교육참석 기록에 별도 플래그) ── */
+function logSecurityAlert(agent, reason){
+  const recs = getRecords();
+  recs.unshift({
+    id: 'SEC-'+Date.now(), agentId: agent.id,
+    name: agent.name, dept: agent.dept, pin: agent.pin,
+    time: toTimeStr(new Date()), date: today(),
+    status: '⚠보안알림', secReason: reason,
+  });
+  saveRecords(recs);
+  showToast(`🚨 보안 알림: ${agent.name} — ${reason}`, 5000);
+}
+
+function resetPin(){
+  pinBuffer=''; updateDots();
+  document.getElementById('pin-error').textContent='';
+  document.getElementById('already-msg').style.display='none';
+  document.getElementById('pin-form').style.display='block';
+  document.getElementById('success-wrap').style.display='none';
+}
+
+// ============================================================
+//  AGENT MANAGEMENT
+// ============================================================
+async function addAgent(){
+  const name=document.getElementById('ag-name').value.trim();
+  const dept=document.getElementById('ag-dept').value;
+  const phone=document.getElementById('ag-phone').value.trim();
+  if(!name){ showToast('이름을 입력하세요'); return; }
+  if(!dept){ showToast('팀을 선택하세요'); return; }
+  const agents=getAgents();
+  if(agents.find(a=>a.name===name && a.dept===dept)){
+    showToast('같은 이름+팀의 설계사가 이미 등록됐습니다');return;
+  }
+  const mode=getPinMode();
+  const usedPins=new Set(agents.map(a=>String(a.pin)));
+  const {pin}=calcNewPin({phone, name, dept}, usedPins, mode);
+  agents.push({id:String(Date.now()), name, dept, phone, pin, pinMonth:currentMonth(), createdAt:today()});
+
+  save(K_AGENTS, agents);
+  document.getElementById('ag-name').value='';
+  document.getElementById('ag-phone').value='';
+  document.getElementById('ag-dept').value='';
+  toggleAddForm(null);
+  renderAgents();
+
+  showSyncStatus('☁️ 시트에 등록 중...');
+  const ok = await pushAgentsToSheet();
+  if(ok){
+    showSyncStatus('✅ 등록 완료', 2000);
+    showToast(`${name} 님 등록 완료 · PIN: ${pin}`);
+  } else {
+    showSyncStatus('⚠️ 시트 반영 실패 — 다시 시도하세요', 5000);
+  }
+}
+
+async function deleteAgent(id){
+  const agents=getAgents();
+  const agent=agents.find(a=>String(a.id)===String(id));
+  if(!agent || !confirm(`${agent.name} 님을 삭제할까요?\n교육참석 기록은 유지됩니다.`)) return;
+
+  // 1) 로컬에서 먼저 제거
+  const filtered = agents.filter(a=>String(a.id)!==String(id));
+  save(K_AGENTS, filtered); // saveAgents 대신 save 직접 호출 (이중 푸시 방지)
+  renderAgents();
+  showToast(`${agent.name} 님이 삭제됐습니다`);
+
+  // 2) 시트에 동기적으로 푸시 (완료 대기)
+  showSyncStatus('☁️ 시트에 삭제 반영 중...');
+  const ok = await pushAgentsToSheet();
+  if(ok){
+    showSyncStatus('✅ 삭제 완료', 2000);
+  } else {
+    showSyncStatus('⚠️ 시트 반영 실패 — 다시 시도하세요', 5000);
+    // 실패 시 로컬 복원
+    save(K_AGENTS, agents);
+    renderAgents();
+  }
+}
+
+function renewPin(id){
+  const agents = getAgents();
+  const agent  = agents.find(a=>a.id===id);
+  if(!agent) return;
+  const mode = getPinMode();
+  const usedPins = new Set(agents.filter(a=>a.id!==id).map(a=>a.pin));
+  const {pin, note} = calcNewPin(agent, usedPins, mode);
+  agent.pin = pin; agent.pinMonth = currentMonth();
+  saveAgents(agents);
+  renderAgents();
+  showToast(agent.name+' 님 PIN 갱신 → '+pin+' ('+note+')');
+}
+
+function setAgentsPinMode(mode){
+  savePinMode(mode);
+  // 토글 버튼 스타일 동기화
+  const phoneBtn  = document.getElementById('agents-pin-phone');
+  const randomBtn = document.getElementById('agents-pin-random');
+  if(phoneBtn && randomBtn){
+    phoneBtn.style.background  = mode==='phone'  ? 'var(--primary)' : '#fff';
+    phoneBtn.style.color       = mode==='phone'  ? '#fff' : 'var(--primary)';
+    randomBtn.style.background = mode==='random' ? 'var(--primary)' : '#fff';
+    randomBtn.style.color      = mode==='random' ? '#fff' : 'var(--primary)';
+  }
+  // 설정 탭 라디오도 동기화
+  const radio = document.getElementById('pin-mode-'+mode);
+  if(radio) radio.checked = true;
+  const warn = document.getElementById('pin-phone-warn');
+  if(warn) warn.style.display = mode==='phone' ? 'block' : 'none';
+  // 미리보기 초기화
+  const pw = document.getElementById('pin-preview-wrap');
+  if(pw) pw.style.display = 'none';
+  showToast('PIN 방식: '+(mode==='phone'?'핸드폰 뒷 4자리':'임의 4자리'));
+}
+
+function syncAgentsPinToggle(){
+  const mode = getPinMode();
+  const phoneBtn  = document.getElementById('agents-pin-phone');
+  const randomBtn = document.getElementById('agents-pin-random');
+  if(phoneBtn && randomBtn){
+    phoneBtn.style.background  = mode==='phone'  ? 'var(--primary)' : '#fff';
+    phoneBtn.style.color       = mode==='phone'  ? '#fff' : 'var(--primary)';
+    randomBtn.style.background = mode==='random' ? 'var(--primary)' : '#fff';
+    randomBtn.style.color      = mode==='random' ? '#fff' : 'var(--primary)';
+  }
+}
+
+function renderAgents(){
+  const agents=getAgents();
+  const q=document.getElementById('agent-search').value.trim();
+  const deptF=document.getElementById('agent-dept-filter').value;
+  let list=agents;
+  if(q) list=list.filter(a=>a.name.includes(q));
+  if(deptF) list=list.filter(a=>a.dept===deptF);
+
+  document.getElementById('agent-count').textContent=`총 ${list.length}명 / 전체 ${agents.length}명`;
+  const grid=document.getElementById('agent-grid');
+  const empty=document.getElementById('agent-empty');
+  if(!list.length){ grid.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  const mon=currentMonth();
+  grid.innerHTML=list.map(a=>{
+    const expired=a.pinMonth!==mon;
+    return`<div class="agent-card">
+      <span class="${expired?'ac-expired':'ac-active'}">${expired?'갱신필요':'활성'}</span>
+      <div class="ac-name">${a.name}</div>
+      <div class="ac-dept"><span class="dept-tag">${a.dept}</span>${a.phone?` <span style="font-size:11px;color:var(--text2);margin-left:4px">${a.phone}</span>`:''}</div>
+      <div class="ac-pin">${a.pin}</div>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:8px">${a.pinMonth||'-'} 발급</div>
+      <div class="ac-actions">
+        <button class="ac-btn" onclick="openEditModal('${a.id}')">✏ 수정</button>
+        <button class="ac-btn" onclick="renewPin('${a.id}')">🔄 PIN</button>
+        <button class="ac-btn ac-del" onclick="deleteAgent('${a.id}')">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('m-total').textContent=agents.length;
+}
+
+function toggleAddForm(mode){
+  // mode: 'single' | 'bulk' | null(닫기)
+  const single = document.getElementById('add-form-single');
+  const bulk   = document.getElementById('add-form-bulk');
+  if(!single || !bulk) return;
+  if(mode === 'single'){
+    single.classList.add('open'); bulk.classList.remove('open');
+    setTimeout(()=>{ const n=document.getElementById('ag-name'); if(n) n.focus(); }, 80);
+  } else if(mode === 'bulk'){
+    bulk.classList.add('open'); single.classList.remove('open');
+    switchBulkTab('excel');
+  } else {
+    single.classList.remove('open'); bulk.classList.remove('open');
+    clearExcelPreview();
+    const pa = document.getElementById('paste-area'); if(pa) pa.value='';
+    const pp = document.getElementById('paste-preview'); if(pp) pp.style.display='none';
+    const br = document.getElementById('bulk-result'); if(br) br.style.display='none';
+  }
+}
+
+// ============================================================
+//  BULK IMPORT — 엑셀 업로드 + 붙여넣기
+// ============================================================
+
+let _excelRows = []; // 파싱된 엑셀 행 캐시
+
+/* ── 탭 전환 ── */
+function switchBulkTab(tab){
+  const exSec = document.getElementById('bulk-excel-section');
+  const paSec = document.getElementById('bulk-paste-section');
+  const exBtn = document.getElementById('bulk-tab-excel');
+  const paBtn = document.getElementById('bulk-tab-paste');
+  if(!exSec || !paSec) return;
+  if(tab === 'excel'){
+    exSec.style.display = 'block'; paSec.style.display = 'none';
+    exBtn.style.background = 'var(--primary)'; exBtn.style.color = '#fff'; exBtn.style.fontWeight = '600';
+    paBtn.style.background = '#fff';            paBtn.style.color = 'var(--text2)'; paBtn.style.fontWeight = '500';
+  } else {
+    exSec.style.display = 'none';  paSec.style.display = 'block';
+    paBtn.style.background = 'var(--primary)'; paBtn.style.color = '#fff'; paBtn.style.fontWeight = '600';
+    exBtn.style.background = '#fff';            exBtn.style.color = 'var(--text2)'; exBtn.style.fontWeight = '500';
+  }
+}
+
+/* ── 양식 파일 다운로드 ── */
+function downloadTemplate(){
+  if(typeof XLSX === 'undefined'){ showToast('XLSX 라이브러리 로딩 중입니다. 잠시 후 다시 시도하세요.'); return; }
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['이름','소속팀','연락처'],
+    ['홍길동','강남팀','010-1234-5678'],
+    ['김철수','강북팀','010-9876-5432'],
+    ['이영희','강남팀',''],
+  ]);
+  ws['!cols'] = [{wch:12},{wch:10},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, ws, '설계사명단');
+  XLSX.writeFile(wb, 'KGA_설계사_일괄등록양식.xlsx');
+}
+
+/* ── 드래그&드롭 ── */
+function handleFileDrop(e){
+  e.preventDefault();
+  const dz = document.getElementById('drop-zone');
+  if(dz) dz.style.borderColor = 'var(--gray-border)';
+  const file = e.dataTransfer.files[0];
+  if(file) handleExcelFile(file);
+}
+
+/* ── 엑셀 파일 파싱 ── */
+function handleExcelFile(file){
+  if(!file) return;
+  if(typeof XLSX === 'undefined'){ showToast('XLSX 라이브러리가 아직 로딩 중입니다.'); return; }
+  const ext = file.name.split('.').pop().toLowerCase();
+  if(!['xlsx','xls'].includes(ext)){ showToast('.xlsx 또는 .xls 파일만 지원합니다.'); return; }
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      const wb = XLSX.read(e.target.result, { type:'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+
+      let rows = raw.filter(r => r.some(c => String(c).trim() !== ''));
+      if(!rows.length){ showToast('빈 파일입니다.'); return; }
+
+      // 헤더 자동 감지: 열 이름으로 이름/지점/전화번호 매핑
+      const firstRow = rows[0].map(c => String(c).trim());
+      const nameKW  = ['이름','성명','name','설계사','설계사명','팀장','팀장명','성함','agent'];
+      const deptKW  = ['지점','소속','부서','팀','dept','branch','소속팀','소속지점','지점명','부서명','팀명','지사','영업점','영업소','office'];
+      const phoneKW = ['전화','전화번호','연락처','핸드폰','휴대폰','phone','mobile','tel','번호','hp','연락'];
+
+      let colName = -1, colDept = -1, colPhone = -1;
+      firstRow.forEach((h, i) => {
+        const low = h.toLowerCase();
+        if(colName  === -1 && nameKW.some(k  => low.includes(k.toLowerCase())))  colName  = i;
+        if(colDept  === -1 && deptKW.some(k  => low.includes(k.toLowerCase())))  colDept  = i;
+        if(colPhone === -1 && phoneKW.some(k => low.includes(k.toLowerCase()))) colPhone = i;
+      });
+
+      const hasHeader = colName !== -1 || colDept !== -1 || colPhone !== -1;
+      if(hasHeader){
+        rows = rows.slice(1); // 헤더 행 제거
+        // 감지된 열이 없으면 나머지 열에서 순서대로 배정
+        const usedCols = [colName, colDept, colPhone].filter(c => c >= 0);
+        const unusedCols = firstRow.map((_,i) => i).filter(i => !usedCols.includes(i));
+        if(colName  === -1 && unusedCols.length > 0) colName  = unusedCols.shift();
+        if(colDept  === -1 && unusedCols.length > 0) colDept  = unusedCols.shift();
+        if(colPhone === -1 && unusedCols.length > 0) colPhone = unusedCols.shift();
+      } else {
+        // 헤더 없으면 기본: A=이름, B=지점, C=전화번호
+        colName = 0; colDept = 1; colPhone = 2;
+      }
+
+      _excelRows = rows
+        .map(r => ({
+          name:  String(r[colName]  || '').trim(),
+          dept:  colDept  >= 0 ? String(r[colDept]  || '').trim() : '',
+          phone: colPhone >= 0 ? String(r[colPhone] || '').trim() : '',
+        }))
+        .filter(r => r.name.length > 0);
+
+      if(!_excelRows.length){ showToast('유효한 데이터가 없습니다. 양식을 확인해주세요.'); return; }
+      renderExcelPreview(file.name);
+    } catch(err){
+      showToast('파일 읽기 오류: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ── 엑셀 미리보기 렌더링 ── */
+function renderExcelPreview(fileName){
+  const depts = getDepts();
+  const defaultDept = depts[0] || '';
+  const agents = getAgents();
+  const existKeys = new Set(agents.map(a => a.name + '::' + a.dept));
+
+  const tbody = document.getElementById('excel-preview-tbody');
+  const title = document.getElementById('excel-preview-title');
+  const importBtn = document.getElementById('excel-import-btn');
+  const preview = document.getElementById('excel-preview');
+  if(!tbody || !preview) return;
+
+  let dupCount = 0, noDeptCount = 0;
+  const previewRows = _excelRows.slice(0, 10); // 미리보기는 최대 10행
+
+  tbody.innerHTML = previewRows.map(r => {
+    const matched = matchDept(r.dept, depts);
+    const resolvedDept = matched || defaultDept;
+    const isDup = existKeys.has(r.name + '::' + resolvedDept);
+    const hasNoDept = !matched;
+    if(isDup) dupCount++;
+    if(hasNoDept) noDeptCount++;
+    return `<tr style="background:${isDup?'#fff8e1':''}">
+      <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0">${r.name}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0">
+        ${resolvedDept}<span style="font-size:10px;color:var(--text2)">${hasNoDept?' (기본 적용)':''}</span>
+      </td>
+      <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0;color:var(--text2)">${r.phone||'-'}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0">
+        ${isDup
+          ? '<span style="background:#fff3e0;color:#e65100;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600">중복</span>'
+          : '<span style="background:#e8f5e9;color:#2e7d32;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600">신규</span>'
+        }
+      </td>
+    </tr>`;
+  }).join('');
+
+  const total = _excelRows.length;
+  const newCount = total - _excelRows.filter(r => existKeys.has(r.name + '::' + (matchDept(r.dept, depts) || defaultDept))).length;
+  title.textContent = `파일: ${fileName} — 전체 ${total}행 (신규 ${newCount}명, 중복 ${total - newCount}명)${total>10?' — 미리보기 10행':''}`;
+  importBtn.textContent = `✅ ${newCount}명 등록 시작`;
+  importBtn.disabled = newCount === 0;
+  preview.style.display = 'block';
+}
+
+/* ── 엑셀 미리보기 초기화 ── */
+function clearExcelPreview(){
+  _excelRows = [];
+  const preview = document.getElementById('excel-preview');
+  if(preview) preview.style.display = 'none';
+  const inp = document.getElementById('excel-file-input');
+  if(inp) inp.value = '';
+}
+
+/* ── 엑셀 데이터 실제 등록 ── */
+function importExcelData(){
+  if(!_excelRows.length){ showToast('가져올 데이터가 없습니다.'); return; }
+  const result = bulkImport(_excelRows);
+  clearExcelPreview();
+  showBulkResult(result);
+}
+
+/* ── 붙여넣기 파싱 & 미리보기 ── */
+let _pasteRows = [];
+function parsePastePreview(){
+  const raw = (document.getElementById('paste-area')||{}).value || '';
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const depts = getDepts();
+  const defaultDept = depts[0] || '';
+
+  _pasteRows = lines.map(line => {
+    // 탭 구분 또는 연속 공백 3개 이상, 쉼표 구분 모두 지원
+    const parts = line.split(/\t|,(?=\s)|\s{2,}/).map(p => p.trim());
+    return {
+      name:  parts[0] || '',
+      dept:  parts[1] || '',
+      phone: parts[2] || '',
+    };
+  }).filter(r => r.name.length > 0);
+
+  const preview = document.getElementById('paste-preview');
+  const tbody = document.getElementById('paste-preview-tbody');
+  const title = document.getElementById('paste-preview-title');
+  const btn = document.getElementById('paste-import-btn');
+  if(!preview) return;
+
+  if(!_pasteRows.length){ preview.style.display = 'none'; return; }
+
+  const agents = getAgents();
+  const existKeys = new Set(agents.map(a => a.name + '::' + a.dept));
+  const newCount = _pasteRows.filter(r => !existKeys.has(r.name + '::' + (matchDept(r.dept, depts) || defaultDept))).length;
+
+  tbody.innerHTML = _pasteRows.slice(0, 10).map(r => {
+    const matched = matchDept(r.dept, depts);
+    const dept = matched || defaultDept;
+    const isDup = existKeys.has(r.name + '::' + dept);
+    return `<tr>
+      <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0">${r.name}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0">${dept}${!matched?' <span style="font-size:10px;color:var(--text2)">(기본)</span>':''}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0;color:var(--text2)">${r.phone||'-'}</td>
+    </tr>`;
+  }).join('');
+
+  title.textContent = `총 ${_pasteRows.length}행 인식 (신규 ${newCount}명)${_pasteRows.length>10?' — 미리보기 10행':''}`;
+  btn.textContent = `✅ ${newCount}명 등록 시작`;
+  btn.disabled = newCount === 0;
+  preview.style.display = 'block';
+}
+
+/* ── 붙여넣기 데이터 실제 등록 ── */
+function importPasteData(){
+  if(!_pasteRows.length){ showToast('가져올 데이터가 없습니다.'); return; }
+  const result = bulkImport(_pasteRows);
+  const pa = document.getElementById('paste-area'); if(pa) pa.value='';
+  const pv = document.getElementById('paste-preview'); if(pv) pv.style.display='none';
+  _pasteRows = [];
+  showBulkResult(result);
+}
+
+/* 지점명 유사 매칭: '신설동' → '신설동지점', '호평' → '호평지점' 등 */
+function matchDept(input, depts){
+  if(!input) return '';
+  const t = input.trim();
+  // 1) 정확 일치
+  if(depts.includes(t)) return t;
+  // 2) 부분 포함 매칭 (입력이 지점명에 포함되거나, 지점명이 입력에 포함)
+  const found = depts.find(d => d.includes(t) || t.includes(d));
+  if(found) return found;
+  // 3) 공백/특수문자 제거 후 비교
+  const clean = t.replace(/[^가-힣a-zA-Z0-9]/g,'');
+  const match = depts.find(d => d.replace(/[^가-힣a-zA-Z0-9]/g,'') === clean);
+  if(match) return match;
+  return '';
+}
+
+/* ── 핵심: 일괄 등록 공통 로직 ── */
+function bulkImport(rows){
+  const depts = getDepts();
+  const defaultDept = depts[0] || '';
+  const mode = getPinMode();
+  let agents = getAgents();
+  const existKeys = new Set(agents.map(a => a.name + '::' + a.dept));
+  const usedPins = new Set(agents.map(a => a.pin));
+
+  let added = 0, skipped = 0, noDeptFixed = 0;
+  const addedNames = [];
+  const skippedNames = [];
+
+  rows.forEach((r, i) => {
+    if(!r.name) return;
+    const matched = matchDept(r.dept, depts);
+    const dept = matched || defaultDept;
+    if(!matched) noDeptFixed++;
+    const key = r.name + '::' + dept;
+    if(existKeys.has(key)){ skipped++; skippedNames.push(r.name); return; }
+
+    // PIN 생성 (선택된 방식 적용)
+    const {pin} = calcNewPin(r, usedPins, mode);
+    if(!phoneLastFour(r.phone)) usedPins.add(pin); // 임의 방식만 중복 방지
+
+    const newAgent = {
+      id: String(Date.now() + i),
+      name: r.name,
+      dept,
+      phone: r.phone || '',
+      pin,
+      pinMonth: currentMonth(),
+      createdAt: today(),
+    };
+    agents.push(newAgent);
+    existKeys.add(key);
+    addedNames.push(r.name);
+    added++;
+  });
+
+  saveAgents(agents);
+  renderAgents();
+  renderDashboard();
+  return { added, skipped, noDeptFixed, addedNames, skippedNames };
+}
+
+/* ── 등록 결과 표시 ── */
+function showBulkResult(result){
+  const el = document.getElementById('bulk-result');
+  if(!el) return;
+  const { added, skipped, noDeptFixed, skippedNames } = result;
+  el.style.display = 'block';
+  el.style.background = added > 0 ? 'var(--green-bg)' : '#fff3e0';
+  el.style.border = `1px solid ${added > 0 ? '#a5d6a7' : '#ffcc02'}`;
+  el.style.borderRadius = 'var(--radius-sm)';
+  el.innerHTML = `
+    <div style="font-size:14px;font-weight:600;color:${added>0?'var(--green)':'var(--amber)'};margin-bottom:8px">
+      ${added > 0 ? '✅ 등록 완료' : '⚠️ 등록된 항목 없음'}
+    </div>
+    <div style="font-size:13px;color:var(--text2);line-height:2">
+      ✔ 신규 등록: <strong style="color:var(--green)">${added}명</strong><br>
+      ${skipped > 0 ? `⚠ 중복 건너뜀: <strong style="color:var(--amber)">${skipped}명</strong> (${skippedNames.slice(0,5).join(', ')}${skippedNames.length>5?` 외 ${skippedNames.length-5}명`:''})<br>` : ''}
+      ${noDeptFixed > 0 ? `ℹ 팀 미입력 → 기본팀 자동 적용: <strong>${noDeptFixed}명</strong><br>` : ''}
+      ${added > 0 ? `🔑 PIN 번호는 설계사 관리 카드에서 확인하세요.` : ''}
+    </div>
+    ${added > 0 ? `<button onclick="exportAgents()" class="btn btn-primary" style="margin-top:12px;height:36px;font-size:13px">📥 설계사 명단 엑셀 다운로드</button>` : ''}
+  `;
+  showToast(`${added}명 등록 완료${skipped>0?`, ${skipped}명 중복 건너뜀`:''}`);
+}
+
+// ============================================================
+//  DEPT MANAGEMENT
+// ============================================================
+function renderDepts(){
+  const depts=getDepts();
+  [
+    {id:'ag-dept',     blank:'팀 선택'},
+    {id:'agent-dept-filter', blank:'전체 팀'},
+    {id:'list-dept-filter',  blank:'전체 팀'},
+  ].forEach(({id,blank})=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.innerHTML=`<option value="">${blank}</option>`+depts.map(d=>`<option>${d}</option>`).join('');
+  });
+  const dl=document.getElementById('dept-list');
+  if(dl){
+    dl.innerHTML=depts.map(d=>`<div style="display:flex;align-items:center;gap:6px;background:var(--primary-light);border-radius:20px;padding:4px 12px 4px 14px;font-size:13px;font-weight:500;color:var(--primary)">
+      ${d}
+      <button onclick="deleteDept('${d}')" style="border:none;background:none;cursor:pointer;color:var(--red);font-size:14px;line-height:1;padding:0 2px" title="삭제">×</button>
+    </div>`).join('');
+  }
+}
+function addDept(){
+  const v=document.getElementById('dept-input').value.trim();
+  if(!v){ showToast('팀 이름을 입력하세요'); return; }
+  const depts=getDepts();
+  if(depts.includes(v)){ showToast('이미 있는 팀입니다'); return; }
+  depts.push(v); saveDepts(depts); renderDepts();
+  document.getElementById('dept-input').value='';
+  showToast(`"${v}" 팀이 추가됐습니다`);
+}
+function deleteDept(d){
+  const agents=getAgents();
+  if(agents.some(a=>a.dept===d)){ showToast(`"${d}"에 소속 설계사가 있어 삭제할 수 없습니다`); return; }
+  if(!confirm(`"${d}" 팀을 삭제할까요?`)) return;
+  const depts=getDepts().filter(x=>x!==d); saveDepts(depts); renderDepts();
+}
+
+// ============================================================
+//  DASHBOARD
+// ============================================================
+function renderDashboard(){
+  const todayRecs=getRecords().filter(r=>r.date===today());
+  document.getElementById('today-label').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  document.getElementById('m-today').textContent=todayRecs.length;
+  document.getElementById('m-ontime').textContent=todayRecs.filter(r=>r.status==='정시').length;
+  document.getElementById('m-late').textContent=todayRecs.filter(r=>r.status!=='정시').length;
+  document.getElementById('m-total').textContent=getAgents().length;
+  const _t=today();
+  const mLeave=document.getElementById('m-leave');
+  if(mLeave) mLeave.textContent=getLeaves().filter(l=>l.start<=_t && _t<=l.end).length;
+
+  const tbody=document.getElementById('recent-tbody');
+  if(!todayRecs.length){
+    tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text2)">오늘 교육참석 기록이 없습니다</td></tr>';
+  } else {
+    tbody.innerHTML=todayRecs.slice(0,12).map(r=>`<tr>
+      <td><span class="avatar">${r.name[0]}</span>${r.name}</td>
+      <td><span class="dept-tag">${r.dept}</span></td>
+      <td><span class="pin-tag">${r.pin}</span></td>
+      <td style="font-variant-numeric:tabular-nums">${r.time}</td>
+      <td>${statusBadge(r.status)}</td>
+    </tr>`).join('');
+  }
+
+  const depts=getDepts();
+  const el=document.getElementById('dept-chart');
+  if(!todayRecs.length){el.innerHTML='<p style="color:var(--text2);font-size:13px;text-align:center;padding:16px">데이터 없음</p>';return;}
+  const max=Math.max(...depts.map(d=>todayRecs.filter(r=>r.dept===d).length),1);
+  el.innerHTML=depts.map(d=>{
+    const cnt=todayRecs.filter(r=>r.dept===d).length;
+    return`<div class="bar-row">
+      <span class="bar-label">${d}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(cnt/max*100)}%"></div></div>
+      <span class="bar-count">${cnt}명</span>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+//  LIST
+// ============================================================
+let currentPage=1, filteredCache=[];
+function getFiltered(){
+  const dv=document.getElementById('filter-date').value;
+  const nv=document.getElementById('filter-name').value.trim();
+  const sv=document.getElementById('filter-status').value;
+  const deptv=document.getElementById('list-dept-filter').value;
+  let r=getRecords();
+  if(dv) r=r.filter(x=>x.date===dv);
+  if(nv) r=r.filter(x=>x.name.includes(nv));
+  if(sv) r=r.filter(x=>x.status===sv);
+  if(deptv) r=r.filter(x=>x.dept===deptv);
+  return r;
+}
+function renderList(){
+  filteredCache=getFiltered();
+  const total=filteredCache.length;
+  const pages=Math.max(1,Math.ceil(total/20));
+  if(currentPage>pages) currentPage=1;
+  const slice=filteredCache.slice((currentPage-1)*20, currentPage*20);
+  const tbody=document.getElementById('list-tbody');
+  const empty=document.getElementById('list-empty');
+  document.getElementById('list-count').textContent=`총 ${total}건`;
+  if(!slice.length){ tbody.innerHTML=''; empty.style.display='block'; }
+  else{
+    empty.style.display='none';
+    tbody.innerHTML=slice.map(r=>`<tr>
+      <td><span class="avatar">${r.name[0]}</span>${r.name}</td>
+      <td><span class="dept-tag">${r.dept}</span></td>
+      <td><span class="pin-tag">${r.pin||'-'}</span></td>
+      <td style="font-variant-numeric:tabular-nums">${r.time}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td style="color:var(--text2)">${r.date}</td>
+      <td><button onclick="delRec('${r.id}')" style="border:none;background:none;cursor:pointer;color:var(--red);font-size:17px;padding:0 4px">×</button></td>
+    </tr>`).join('');
+  }
+  renderPagination(pages);
+}
+async function delRec(id){
+  if(!confirm('이 교육참석 기록을 삭제할까요?')) return;
+  const before = getRecords();
+  saveRecords(before.filter(r=>r.id!==id));
+  renderList(); renderDashboard(); showToast('삭제됐습니다');
+
+  // 시트에서도 삭제
+  showSyncStatus('☁️ 시트에서 삭제 중...');
+  try {
+    const res = await fetch(SHEET_URL + '?action=deleteRecord&id=' + encodeURIComponent(id));
+    const json = await res.json();
+    if(json.ok){
+      showSyncStatus('✅ 시트 삭제 완료', 2000);
+    } else {
+      throw new Error(json.error);
+    }
+  } catch(e){
+    console.error('sheet delete error', e);
+    showSyncStatus('⚠️ 시트 삭제 실패 — 다시 시도하세요', 5000);
+    save(K_ATT, before);
+    renderList(); renderDashboard();
+  }
+}
+function renderPagination(pages){
+  const pg=document.getElementById('pagination');
+  if(pages<=1){pg.innerHTML='';return;}
+  const s=Math.max(1,currentPage-3), e=Math.min(pages,currentPage+3);
+  let h='';
+  if(s>1) h+=`<button class="pg-btn" onclick="goPage(1)">«</button>`;
+  for(let i=s;i<=e;i++) h+=`<button class="pg-btn${i===currentPage?' active':''}" onclick="goPage(${i})">${i}</button>`;
+  if(e<pages) h+=`<button class="pg-btn" onclick="goPage(${pages})">»</button>`;
+  pg.innerHTML=h;
+}
+function goPage(p){ currentPage=p; renderList(); }
+function clearFilter(){
+  const fd=document.getElementById('filter-date'); if(fd) fd.value=today();
+  const fn=document.getElementById('filter-name'); if(fn) fn.value='';
+  const fs=document.getElementById('filter-status'); if(fs) fs.value='';
+  const fd2=document.getElementById('list-dept-filter'); if(fd2) fd2.value='';
+  currentPage=1; renderList();
+}
+
+// ============================================================
+//  EXCEL EXPORT
+// ============================================================
+function exportExcel(mode){
+  const all=getRecords();
+  let recs=all, name='전체기록';
+  if(mode==='today'){ recs=all.filter(r=>r.date===today()); name='오늘교육참석'; }
+  if(mode==='filtered'){ recs=filteredCache.length?filteredCache:all; name='필터교육참석'; }
+  if(!recs.length){ showToast('다운로드할 데이터가 없습니다'); return; }
+  const data=[['날짜','이름','소속팀','PIN','교육참석시간','상태'],...recs.map(r=>[r.date,r.name,r.dept,r.pin?String(r.pin).padStart(4,'0'):'',r.time,r.status])];
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:12},{wch:10},{wch:8},{wch:6},{wch:10},{wch:8}];
+  XLSX.utils.book_append_sheet(wb,ws,name);
+
+  /* ── 두 번째 시트: 휴가 목록 ── */
+  let leaves = getLeaves();
+  // '오늘 엑셀'이면 오늘이 휴가 기간에 포함되는 건만
+  if(mode==='today'){
+    const t = today();
+    leaves = leaves.filter(l => l.start <= t && t <= l.end);
+  }
+  if(leaves.length){
+    const lvData = [
+      ['이름','지점','휴가종류','시작일','종료일','인정일수','사유','등록일'],
+      ...leaves.map(l => [l.agentName, l.dept, l.type, l.start, l.end, l.dates?.length||0, l.reason||'', l.createdAt||''])
+    ];
+    const lvWs = XLSX.utils.aoa_to_sheet(lvData);
+    lvWs['!cols']=[{wch:10},{wch:10},{wch:10},{wch:12},{wch:12},{wch:8},{wch:24},{wch:12}];
+    XLSX.utils.book_append_sheet(wb, lvWs, '휴가목록');
+  }
+
+  XLSX.writeFile(wb,`KGA_교육참석기록_${today()}.xlsx`);
+  showToast(`교육참석 ${recs.length}건${leaves.length?` + 휴가 ${leaves.length}건`:''} 엑셀 저장 완료`);
+}
+
+function exportAgents(){
+  const agents=getAgents();
+  if(!agents.length){ showToast('등록된 설계사가 없습니다'); return; }
+  const data=[['이름','소속팀','PIN','PIN발급월','연락처','등록일'],...agents.map(a=>[a.name,a.dept,a.pin?String(a.pin).padStart(4,'0'):'',a.pinMonth||'',a.phone||'',a.createdAt||''])];
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:10},{wch:8},{wch:6},{wch:10},{wch:14},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws,'설계사명단');
+  XLSX.writeFile(wb,`KGA_설계사명단_${today()}.xlsx`);
+  showToast('설계사 명단 엑셀 저장 완료');
+}
+
+// ============================================================
+//  CONFIG
+// ============================================================
+async function saveCfg(){
+  const c={hour:+document.getElementById('cfg-hour').value, min:+document.getElementById('cfg-min').value, lateMin:+document.getElementById('cfg-late').value};
+  save(K_CFG, c);
+  document.getElementById('cfg-result').textContent=`저장됨: 정시 기준 ${c.hour}:${String(c.min).padStart(2,'0')}, 심한지각 +${c.lateMin}분`;
+  await pushSettingsToSheet({baseCfg: c});
+  showToast('설정이 저장됐습니다');
+}
+
+// ============================================================
+//  1. 지점별 교육참석 기준 시간
+// ============================================================
+const K_BRANCH_CFG = 'kga_branch_cfg_v1';
+
+function getBranchCfgs(){ return load(K_BRANCH_CFG, {}); }
+function saveBranchCfgs(c){ save(K_BRANCH_CFG, c); }
+
+function renderBranchTimeList(){
+  const el = document.getElementById('branch-time-list');
+  if(!el) return;
+  const depts   = getDepts();
+  const cfgs    = getBranchCfgs();
+  const defCfg  = getCfg();
+
+  el.innerHTML = depts.map(dept => {
+    const c   = cfgs[dept] || {};
+    const h   = c.hour   !== undefined ? c.hour   : defCfg.hour;
+    const m   = c.min    !== undefined ? c.min    : defCfg.min;
+    const l   = c.lateMin!== undefined ? c.lateMin: defCfg.lateMin;
+    const custom = !!cfgs[dept];
+    return `<div style="background:${custom?'#e8f5e9':'#f9f9f9'};border:1px solid ${custom?'#a5d6a7':'#e0e0e0'};border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:13px;font-weight:600;min-width:80px;color:var(--primary)">${dept}</span>
+      <span style="font-size:11px;padding:1px 7px;border-radius:10px;background:${custom?'var(--green-bg)':'#eee'};color:${custom?'var(--green)':'#999'}">${custom?'개별설정':'기본값적용'}</span>
+      <select id="bt-h-${dept}" style="height:32px;width:68px;font-size:12px">
+        ${[7,8,9,10,11,12].map(v=>`<option value="${v}"${v===h?' selected':''}>${String(v).padStart(2,'0')}시</option>`).join('')}
+      </select>
+      <select id="bt-m-${dept}" style="height:32px;width:68px;font-size:12px">
+        ${[0,30].map(v=>`<option value="${v}"${v===m?' selected':''}>${String(v).padStart(2,'0')}분</option>`).join('')}
+      </select>
+      <select id="bt-l-${dept}" style="height:32px;width:90px;font-size:12px">
+        ${[30,60,120].map(v=>`<option value="${v}"${v===l?' selected':''}>+${v}분</option>`).join('')}
+      </select>
+      <button onclick="saveBranchTime('${dept}')" style="height:32px;padding:0 12px;font-size:12px;font-weight:600;border:none;background:var(--primary);color:#fff;border-radius:6px;cursor:pointer">저장</button>
+      ${custom?`<button onclick="resetBranchTime('${dept}')" style="height:32px;padding:0 10px;font-size:11px;border:1px solid var(--gray-border);background:#fff;color:var(--text2);border-radius:6px;cursor:pointer">기본값으로</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+async function saveBranchTime(dept){
+  const h = parseInt(document.getElementById('bt-h-'+dept)?.value);
+  const m = parseInt(document.getElementById('bt-m-'+dept)?.value);
+  const l = parseInt(document.getElementById('bt-l-'+dept)?.value);
+  const cfgs = getBranchCfgs();
+  cfgs[dept] = {hour:h, min:m, lateMin:l};
+  saveBranchCfgs(cfgs);
+  renderBranchTimeList();
+  await pushSettingsToSheet({branchCfg: cfgs});
+  showToast(dept+' 기준시간 저장: '+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'));
+}
+
+async function resetBranchTime(dept){
+  const cfgs = getBranchCfgs();
+  delete cfgs[dept];
+  saveBranchCfgs(cfgs);
+  renderBranchTimeList();
+  await pushSettingsToSheet({branchCfg: cfgs});
+  showToast(dept+' → 전체 기본값으로 초기화');
+}
+
+// ============================================================
+//  2. 설계사 정보 수정 모달
+// ============================================================
+function openEditModal(agentId){
+  const agent = getAgents().find(a=>a.id===agentId);
+  if(!agent) return;
+  document.getElementById('edit-agent-id').value   = agent.id;
+  document.getElementById('edit-agent-name').value = agent.name;
+  document.getElementById('edit-agent-phone').value= agent.phone||'';
+  document.getElementById('edit-agent-pin').value  = agent.pin||'';
+  // 지점 선택 드롭다운 채우기
+  const sel = document.getElementById('edit-agent-dept');
+  const depts = getDepts();
+  sel.innerHTML = depts.map(d=>`<option${d===agent.dept?' selected':''}>${d}</option>`).join('');
+  document.getElementById('agent-edit-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('edit-agent-name').focus(), 80);
+}
+
+function closeEditModal(){
+  document.getElementById('agent-edit-modal').style.display='none';
+}
+
+function regenPin(){
+  const agents = getAgents();
+  const curId  = document.getElementById('edit-agent-id').value;
+  const usedPins = new Set(agents.filter(a=>a.id!==curId).map(a=>a.pin));
+  let pin; do{ pin=String(Math.floor(1000+Math.random()*9000)); }while(usedPins.has(pin));
+  document.getElementById('edit-agent-pin').value = pin;
+}
+
+async function saveAgentEdit(){
+  const id    = document.getElementById('edit-agent-id').value;
+  const name  = document.getElementById('edit-agent-name').value.trim();
+  const dept  = document.getElementById('edit-agent-dept').value;
+  const phone = document.getElementById('edit-agent-phone').value.trim();
+  const pin   = document.getElementById('edit-agent-pin').value.trim();
+  if(!name){ showToast('이름을 입력하세요'); return; }
+  if(!dept){ showToast('지점을 선택하세요'); return; }
+  if(!/^\d{4}$/.test(pin)){ showToast('PIN은 4자리 숫자여야 합니다'); return; }
+  const agents = getAgents();
+  if(agents.some(a=>String(a.id)!==String(id) && String(a.pin)===pin)){ showToast('이미 사용 중인 PIN입니다. 새 PIN을 발급하세요'); return; }
+  const idx = agents.findIndex(a=>String(a.id)===String(id));
+  if(idx<0){ showToast('설계사를 찾을 수 없습니다'); return; }
+  agents[idx] = {...agents[idx], name, dept, phone, pin};
+
+  save(K_AGENTS, agents); // 이중 푸시 방지
+  closeEditModal();
+  renderAgents();
+
+  showSyncStatus('☁️ 시트에 수정 반영 중...');
+  const ok = await pushAgentsToSheet();
+  if(ok){
+    showSyncStatus('✅ 수정 완료', 2000);
+    showToast(name+' 님 정보가 수정됐습니다');
+  } else {
+    showSyncStatus('⚠️ 시트 반영 실패 — 다시 시도하세요', 5000);
+  }
+}
+
+// ESC 키로 모달 닫기
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape') closeEditModal();
+});
+// 모달 바깥 클릭 닫기
+document.getElementById('agent-edit-modal').addEventListener('click', function(e){
+  if(e.target===this) closeEditModal();
+});
+
+// ============================================================
+//  3. 관리자(내근사원) 접근 인증
+// ============================================================
+const K_ADMIN     = 'kga_admin_v1';
+const SESSION_KEY = 'kga_session';
+
+function getAdminCfg(){
+  return load(K_ADMIN, {id:'admin', pw:'kga1234'});
+}
+
+function isLoggedIn(){
+  const s = sessionStorage.getItem(SESSION_KEY);
+  return s === 'ok';
+}
+
+function doAdminLogin(){
+  const id = (document.getElementById('admin-id')?.value||'').trim();
+  const pw = (document.getElementById('admin-pw')?.value||'').trim();
+  const cfg = getAdminCfg();
+  const errEl = document.getElementById('admin-err');
+  if(id===cfg.id && pw===cfg.pw){
+    sessionStorage.setItem(SESSION_KEY,'ok');
+    document.getElementById('admin-overlay').style.display='none';
+    // 로그인 즉시 시트 동기화 시작
+    startAutoSync();
+    errEl.textContent='';
+    showToast('로그인됐습니다');
+  } else {
+    errEl.textContent='아이디 또는 비밀번호가 올바르지 않습니다.';
+    const pwEl = document.getElementById('admin-pw');
+    if(pwEl){ pwEl.value=''; pwEl.focus(); }
+  }
+}
+
+function doAdminLogout(){
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+function checkAdminAccess(){
+  // #checkin 으로 접속하면 설계사 모드 — 관리자 로그인 건너뛰기 (로컬 버전에서는 비활성화)
+  if(!LOCAL_ADMIN && location.hash === '#checkin'){
+    enableAgentMode();
+    return;
+  }
+  if(!isLoggedIn()){
+    document.getElementById('admin-overlay').style.display='flex';
+  }
+}
+
+/* ── 설계사 모드: 관리자 UI 전부 숨기고 체크인 화면만 노출 ── */
+async function enableAgentMode(){
+  // 먼저 UI 띄우고
+  _enableAgentModeUI();
+  // 시트에서 최신 데이터 받아오기 (fetchWithRetry 내부에서 자동 재시도)
+  const ok = await syncFromSheet();
+  const agents = JSON.parse(localStorage.getItem('kga_agents_v2') || '[]');
+
+  if(!ok){
+    showSyncStatus('⚠️ 인터넷 연결 확인 필요 — 새로고침 해주세요', 10000);
+    return;
+  }
+  if(agents.length === 0){
+    showSyncStatus('⚠️ 설계사 데이터 없음 — 새로고침 해주세요', 10000);
+  } else {
+    showSyncStatus('✅ 준비 완료', 2000);
+  }
+}
+
+function _enableAgentModeUI(){
+  // 1. 관리자 로그인 오버레이 강제로 숨김
+  const ov = document.getElementById('admin-overlay');
+  if(ov) ov.style.display = 'none';
+  // 2. 상단 NAV의 다른 탭 버튼 모두 숨김 (체크인 탭만 노출)
+  document.querySelectorAll('.nav-tab').forEach(btn => {
+    if(btn.dataset.panel !== 'checkin') btn.style.display = 'none';
+  });
+  document.querySelectorAll('.mobile-bottom-nav button').forEach(btn => {
+    if(btn.dataset.panel !== 'checkin') btn.style.display = 'none';
+  });
+  // 3. 로그아웃 버튼 숨김
+  document.querySelectorAll('[onclick="doAdminLogout()"]').forEach(b => b.style.display='none');
+  // 4. 체크인 탭으로 강제 전환
+  switchTab('checkin');
+  // 5. 보안 초기화 (GPS + 기기 지문)
+  initSecurityCheck();
+}
+
+function loadCfg(){
+  const c=getCfg();
+  const hEl=document.getElementById('cfg-hour'); if(hEl) hEl.value=c.hour;
+  const mEl=document.getElementById('cfg-min');  if(mEl) mEl.value=c.min;
+  const lEl=document.getElementById('cfg-late'); if(lEl) lEl.value=c.lateMin;
+  const rEl=document.getElementById('cfg-result'); if(rEl) rEl.textContent='현재: 정시 기준 '+c.hour+':'+String(c.min).padStart(2,'0')+', 심한지각 +'+c.lateMin+'분';
+  renderBranchTimeList();
+}
+function updateRenewInfo(){
+  const r=load(K_RENEW, null);
+  document.getElementById('current-month').textContent=currentMonth();
+  document.getElementById('last-renew').textContent=r?`${r.month} (${r.date})`:'기록 없음';
+}
+
+// ============================================================
+//  SAMPLE DATA
+// ============================================================
+const SAMPLE_NAMES=['김민준','이서준','박도윤','정시우','최주원','윤지호','장예준','임준서','한지환','신수호','오하은','서윤아','이지유','김채원','박서연','정수아','최아린','황지민','류소율','배나은'];
+function genSample(){
+  if(!confirm('설계사 20명과 오늘 교육참석 데이터를 생성합니다.\n기존 데이터에 추가됩니다. 계속하시겠습니까?')) return;
+  const depts=getDepts();
+  let agents=getAgents();
+  const usedPins=new Set(agents.map(a=>a.pin));
+  const newAgents=[];
+  SAMPLE_NAMES.forEach((name,i)=>{
+    if(agents.find(a=>a.name===name)) return;
+    let pin; do{ pin=String(Math.floor(1000+Math.random()*9000)); }while(usedPins.has(pin));
+    usedPins.add(pin);
+    const a={id:String(Date.now()+i), name, dept:depts[i%depts.length], phone:'', pin, pinMonth:currentMonth(), createdAt:today()};
+    newAgents.push(a);
+  });
+  agents=[...agents,...newAgents];
+  saveAgents(agents);
+
+  // Attendance
+  const recs=getRecords();
+  const t=today();
+  newAgents.forEach(a=>{
+    if(recs.find(r=>r.agentId===a.id && r.date===t)) return;
+    const h=7+Math.floor(Math.random()*3), m=Math.floor(Math.random()*60);
+    const timeStr=(h<10?'0'+h:h)+':'+(m<10?'0'+m:m);
+    recs.unshift({id:String(Date.now()+Math.random()), agentId:a.id, name:a.name, dept:a.dept, pin:a.pin, time:timeStr, date:t, status:getStatus(timeStr, a.dept)});
+  });
+  saveRecords(recs);
+  renderAgents(); renderDashboard();
+  showToast(`샘플 ${newAgents.length}명 추가 완료`);
+}
+
+// ============================================================
+//  CLEAR
+// ============================================================
+async function clearAttendance(){
+  if(!confirm('교육참석 기록을 전부 삭제할까요?')) return;
+  saveRecords([]); renderList(); renderDashboard();
+  showSyncStatus('☁️ 시트에서 삭제 중...');
+  const ok = await pushRecordsToSheet();
+  if(ok){ showSyncStatus('✅ 시트 삭제 완료', 2000); showToast('교육참석 기록이 삭제됐습니다'); }
+  else { showSyncStatus('⚠️ 시트 반영 실패', 5000); }
+}
+async function clearAgents(){
+  const count = getAgents().length;
+  if(!count){ showToast('등록된 설계사가 없습니다'); return; }
+  if(!confirm(`설계사 ${count}명을 전부 삭제할까요?\n교육참석 기록은 유지됩니다.`)) return;
+  save(K_AGENTS, []);
+  renderAgents(); renderDashboard(); showToast(`설계사 ${count}명이 삭제됐습니다`);
+  showSyncStatus('☁️ 시트에서 삭제 중...');
+  const ok = await pushAgentsToSheet();
+  if(ok){ showSyncStatus('✅ 시트 삭제 완료', 2000); }
+  else { showSyncStatus('⚠️ 시트 반영 실패', 5000); }
+}
+async function clearAll(){
+  if(!confirm('설계사 정보와 교육참석 기록을 모두 삭제합니다.\n정말 초기화하시겠습니까?')) return;
+  [K_AGENTS,K_ATT,K_RENEW].forEach(k=>localStorage.removeItem(k));
+  renderAgents(); renderDashboard(); renderList(); showToast('전체 초기화 완료');
+  showSyncStatus('☁️ 시트 초기화 중...');
+  const ok1 = await pushAgentsToSheet();
+  const ok2 = await pushRecordsToSheet();
+  if(ok1 && ok2){ showSyncStatus('✅ 시트 초기화 완료', 2000); }
+  else { showSyncStatus('⚠️ 시트 반영 일부 실패', 5000); }
+}
+
+// ============================================================
+//  NAV / TAB
+// ============================================================
+function switchTab(panel){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab, .mobile-bottom-nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById(panel).classList.add('active');
+  document.querySelectorAll(`[data-panel="${panel}"]`).forEach(b=>b.classList.add('active'));
+  if(panel==='dashboard') renderDashboard();
+  if(panel==='list'){ currentPage=1; renderList(); }
+  if(panel==='agents'){ renderAgents(); syncAgentsPinToggle(); }
+  if(panel==='leaves'){ initLeavesTab(); }
+  if(panel==='settings'){ loadCfg(); updateRenewInfo(); loadSecCfg(); }
+}
+document.querySelectorAll('[data-panel]').forEach(btn=>{
+  btn.addEventListener('click',()=>switchTab(btn.dataset.panel));
+});
+
+// ============================================================
+//  CLOCK
+// ============================================================
+function updateClock(){ document.getElementById('clock').textContent=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+setInterval(updateClock,1000); updateClock();
+
+/* ── 자정 자동 새로고침 (날짜 변경 시 최신 코드 로드) ── */
+(function(){
+  const pageDate = today();
+  setInterval(()=>{
+    if(today() !== pageDate){
+      location.reload();
+    }
+  }, 30000);
+})();
+
+// ============================================================
+//  INIT
+// ============================================================
+(function init(){
+  const fd=document.getElementById('filter-date');
+  if(fd) fd.value=today();
+  const cdl=document.getElementById('ci-date-label');
+  if(cdl) cdl.textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  renderDepts();
+  renderDashboard();
+  renderList();
+  // PIN 방식 버튼 초기화
+  setAgentsPinMode(getPinMode());
+  // 관리자 인증 체크
+  checkAdminAccess();
+  // 관리자 모드면 자동 동기화 시작
+  if(location.hash !== '#checkin' && isLoggedIn()){
+    startAutoSync();
+  }
+  syncAgentsPinToggle();
+  // 로컬 관리자 버전: 체크인 비활성화 상태이므로 보안 초기화(GPS 권한 요청 등) 생략
+  if(!LOCAL_ADMIN) initSecurityCheck();
+})();
+
+// Auto PIN renew check (monthly)
+(function(){
+  const r=load(K_RENEW,null);
+  if(!r || r.month!==currentMonth()){
+    const agents=getAgents();
+    if(agents.length>0 && agents.some(a=>a.pinMonth!==currentMonth())){
+      // Silent auto-renew on new month
+      // (optional: could auto-renew here, but we leave it manual for safety)
+    }
+  }
+})();
+
+// URL hash 처리는 checkAdminAccess() 내부에서 자동 처리됨
+
+function saveAdminAccount(){
+  const id  = (document.getElementById('new-admin-id')?.value||'').trim();
+  const pw  = (document.getElementById('new-admin-pw')?.value||'').trim();
+  const pw2 = (document.getElementById('new-admin-pw2')?.value||'').trim();
+  if(!id){ showToast('아이디를 입력하세요'); return; }
+  if(!pw){ showToast('비밀번호를 입력하세요'); return; }
+  if(pw!==pw2){ showToast('비밀번호가 일치하지 않습니다'); return; }
+  if(pw.length<4){ showToast('비밀번호는 4자 이상이어야 합니다'); return; }
+  save(K_ADMIN, {id, pw});
+  showToast('관리자 계정이 변경됐습니다. 다음 로그인부터 적용됩니다.');
+  document.getElementById('new-admin-pw').value='';
+  document.getElementById('new-admin-pw2').value='';
+}
+</script>
+</body>
+</html>
